@@ -1,4 +1,4 @@
-"""Checks requested in the second review round. All of them are post-hoc (after the pre-registered tests).
+"""Checks requested in the second review round. All of them are post-hoc (after the planned tests).
 
 Usage: python review_round2.py DATA_DIR OUT_DIR
 Writes OUT_DIR/review_round2.json and prints a log.
@@ -8,17 +8,16 @@ import os
 import sys
 
 import numpy as np
-import pandas as pd
-import patsy
 import polars as pl
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from scipy import optimize, special, stats
-from statsmodels.discrete.conditional_models import ConditionalLogit
+from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from common import KEY, REP, anchored_measures, parse_time, read, split_half
+from common import (KEY, REP, anchored_measures, boot_ci, eligible_plays, fit_beta_binomial, loo_errors, parse_time,
+                    read, split_half)
+from common import partial_r as _partial_r
 
 DATA, OUT = sys.argv[1], sys.argv[2]
 RNG = np.random.default_rng(2027)
@@ -35,17 +34,7 @@ plays = pl.read_parquet(os.path.join(OUT, "game_rush_plays.parquet"))
 games = read(DATA, "games.csv")
 players = read(DATA, "players.csv")
 comb = pl.read_parquet(os.path.join(OUT, "combine_dl_players.parquet"))
-elig = (plays.filter(pl.col("stance_start") & pl.col("lined_up_position").is_in(["EDGE", "INTERIOR_LINE"])
-                     & (pl.col("play_nullified_by_penalty") == "N") & (pl.col("blitzing") == True))
-        .join(games.select("game_id", "home_team_abbr"), on="game_id")
-        .with_columns(pl.when(pl.col("team_abbr") == pl.col("home_team_abbr"))
-                      .then(pl.col("pre_snap_home_score") - pl.col("pre_snap_visitor_score"))
-                      .otherwise(pl.col("pre_snap_visitor_score") - pl.col("pre_snap_home_score")).alias("score_diff_def"),
-                      (pl.col("lined_up_position") == "EDGE").cast(pl.Float64).alias("edge"),
-                      pl.col("pressure").cast(pl.Float64).alias("pressure_f")))
-rare = elig.group_by("offense_formation").len().filter(pl.col("len") < 100)["offense_formation"]
-elig = elig.with_columns(pl.when(pl.col("offense_formation").is_null() | pl.col("offense_formation").is_in(rare.drop_nulls().implode()))
-                         .then(pl.lit("OTHER")).otherwise(pl.col("offense_formation")).alias("offense_formation"))
+elig = eligible_plays(plays, games)
 
 
 # ------------------------------------------------------------------ helpers
@@ -60,43 +49,24 @@ def value_at(df, keys, anchor, dt, col="s"):
     return j.select(keys + [(pl.col("vb") - pl.col("ub") / (pl.col("ua") - pl.col("ub")) * (pl.col("va") - pl.col("vb"))).alias("v_at")])
 
 
-def boot_ci(fn, n, b=B):
-    vals = []
-    for _ in range(b):
-        k = RNG.integers(0, n, n)
-        try:
-            vals.append(fn(k))
-        except Exception:
-            pass
-    return [float(np.nanpercentile(vals, 2.5)), float(np.nanpercentile(vals, 97.5))]
-
-
 def pearson_ci(x, y):
     x, y = np.asarray(x, float), np.asarray(y, float)
     ok = ~(np.isnan(x) | np.isnan(y))
     x, y = x[ok], y[ok]
     r, p = stats.pearsonr(x, y)
-    ci = boot_ci(lambda k: np.corrcoef(x[k], y[k])[0, 1], len(x))
+    ci = boot_ci(lambda k: np.corrcoef(x[k], y[k])[0, 1], len(x), RNG, B)
     return {"n": int(len(x)), "r": float(r), "ci": ci, "p": float(p)}
 
 
 def partial_r(x, y, Z):
-    def resid(v, Zm):
-        Z1 = np.column_stack([np.ones(len(v)), Zm])
-        return v - Z1 @ np.linalg.lstsq(Z1, v, rcond=None)[0]
-    x, y, Z = np.asarray(x, float), np.asarray(y, float), np.asarray(Z, float)
-    r = np.corrcoef(resid(x, Z), resid(y, Z))[0, 1]
-    ci = boot_ci(lambda k: np.corrcoef(resid(x[k], Z[k]), resid(y[k], Z[k]))[0, 1], len(x))
-    return {"n": int(len(x)), "r": float(r), "ci": ci}
+    return _partial_r(x, y, Z, RNG, B)
 
 
 def fmt(c):
     return f"r {c['r']:+.3f} [{c['ci'][0]:+.3f}, {c['ci'][1]:+.3f}] n {c['n']}" + (f" p {c['p']:.4f}" if "p" in c else "")
 
 
-def fit_prior(k, n):
-    nll = lambda p: -np.sum(special.betaln(k + np.exp(p[0]), n - k + np.exp(p[1])) - special.betaln(np.exp(p[0]), np.exp(p[1])))
-    return np.exp(optimize.minimize(nll, np.log([2.0, 20.0]), method="Nelder-Mead").x)
+fit_prior = fit_beta_binomial
 
 
 def icc1(df, group, value):
@@ -336,10 +306,7 @@ sets = {"Role (share of snaps on the edge)": ["role"], "Weight": ["weight"], "Of
         "Role + weight + 10-yard split": ["role", "weight", "ten"], "Role + weight + Combine first step": ["role", "weight", "combine"]}
 
 
-def loo_err(yv, X):
-    X1 = np.column_stack([np.ones(len(yv)), X])
-    H = X1 @ np.linalg.pinv(X1.T @ X1) @ X1.T
-    return (yv - H @ yv) / (1 - np.diag(H))
+loo_err = loo_errors
 
 
 errs = {k: loo_err(y, np.column_stack([cols[c] for c in v])) for k, v in sets.items()}

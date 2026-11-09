@@ -1,0 +1,26 @@
+main sample: 62 players
+
+== H1 by measure: Combine vs NFL, unadjusted and adjusted
+   1.5 yd (primary)       Pearson r +0.202 [-0.021, +0.453] p 0.115 | Spearman r +0.263 [+0.020, +0.472] p 0.039
+                          after weight + role: Pearson r +0.040 [-0.183, +0.289] | Spearman r +0.114 [-0.162, +0.361]
+                          after weight only (pre-draft): r -0.004 [-0.237, +0.248]
+   2.5 yd                 Pearson r +0.245 [+0.017, +0.483] p 0.055 | Spearman r +0.306 [+0.077, +0.519] p 0.016
+                          after weight + role: Pearson r +0.014 [-0.221, +0.267] | Spearman r +0.075 [-0.206, +0.335]
+                          after weight only (pre-draft): r -0.035 [-0.282, +0.222]
+   acceleration 1-3 yd/s  Pearson r +0.267 [+0.003, +0.520] p 0.036 | Spearman r +0.249 [-0.017, +0.488] p 0.051
+                          after weight + role: Pearson r +0.230 [-0.011, +0.468] | Spearman r +0.140 [-0.145, +0.407]
+                          after weight only (pre-draft): r +0.103 [-0.206, +0.383]
+
+== Does the Combine first step predict how often a player lines up on the edge?
+   edge share vs Combine first step: r -0.184 [-0.425, +0.063] p 0.153; given weight r +0.072 [-0.207, +0.376]
+   OLS (standardized): Combine first step +0.040 [-0.146, 0.226] p 0.674; weight -0.858 p 1.2e-20; R2 0.719
+
+== Combine first step vs pressure by role, with the H4 controls (draft slot, 10-yd split, edge share)
+   INTERIOR_LINE eb_group  n 34: beta -0.432 HC3 [-1.043, 0.18] boot [-0.738, 0.066] p 0.1664 | partial r r -0.459 [-0.712, +0.044] | + weight + NT r -0.460 [-0.735, +0.100]
+   INTERIOR_LINE eb_global n 34: beta -0.425 HC3 [-1.035, 0.185] boot [-0.736, 0.091] p 0.1724 | partial r r -0.439 [-0.704, +0.079] | + weight + NT r -0.440 [-0.714, +0.122]
+   EDGE          eb_group  n 28: beta +0.054 HC3 [-0.294, 0.401] boot [-0.189, 0.609] p 0.7619 | partial r r +0.065 [-0.226, +0.475] | + weight + NT r +0.121 [-0.183, +0.505]
+   EDGE          eb_global n 28: beta +0.028 HC3 [-0.244, 0.299] boot [-0.223, 0.52] p 0.8427 | partial r r +0.034 [-0.237, +0.393] | + weight + NT r +0.088 [-0.216, +0.459]
+
+== H3 scales: player averages vary by 0.15 play-level SDs; between players, OR per player-level SD slower = 0.870 [0.778, 0.975]
+
+saved review_round3.json

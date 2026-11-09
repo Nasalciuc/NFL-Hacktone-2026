@@ -1,4 +1,4 @@
-"""Pre-registered tests H1-H4 from ANALYSIS_PLAN.md, run once.
+"""Planned tests H1-H4 from ANALYSIS_PLAN.md (specified before testing), run once.
 
 Usage: python tests.py DATA_DIR OUT_DIR
 Reads the parquet files written by game_starts.py and combine_starts.py.
@@ -15,10 +15,11 @@ import numpy as np
 import polars as pl
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from scipy import optimize, special, stats
+from scipy import stats
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from common import read
+import warnings
+from common import eligible_plays, fit_beta_binomial, loo_r2, read
 
 DATA, OUT = sys.argv[1], sys.argv[2]
 # --as-written keeps every row with `sack` filled, as the plan first said; the default keeps
@@ -36,33 +37,11 @@ comb = pl.read_parquet(os.path.join(OUT, "combine_dl_players.parquet"))
 players = read(DATA, "players.csv")
 games = read(DATA, "games.csv")
 
-elig = (plays.filter(pl.col("stance_start") & pl.col("lined_up_position").is_in(["EDGE", "INTERIOR_LINE"])
-                     & (pl.col("play_nullified_by_penalty") == "N"))
-        .join(games.select("game_id", "home_team_abbr"), on="game_id")
-        .with_columns(
-            pl.when(pl.col("team_abbr") == pl.col("home_team_abbr"))
-            .then(pl.col("pre_snap_home_score") - pl.col("pre_snap_visitor_score"))
-            .otherwise(pl.col("pre_snap_visitor_score") - pl.col("pre_snap_home_score")).alias("score_diff_def"),
-            (pl.col("lined_up_position") == "EDGE").cast(pl.Float64).alias("edge"),
-            pl.col("pressure").cast(pl.Float64).alias("pressure_f")))
-if not AS_WRITTEN:
-    elig = elig.filter(pl.col("blitzing") == True)
-# formations with under 100 plays (WILDCAT, missing) cannot be estimated on their own
-rare = elig.group_by("offense_formation").len().filter(pl.col("len") < 100)["offense_formation"]
-elig = elig.with_columns(pl.when(pl.col("offense_formation").is_null() | pl.col("offense_formation").is_in(rare.drop_nulls().implode()))
-                         .then(pl.lit("OTHER")).otherwise(pl.col("offense_formation")).alias("offense_formation"))
+elig = eligible_plays(plays, games, rushers_only=not AS_WRITTEN)
 print(f"definition: {TAG}; eligible plays {elig.height:,}, players {elig['nfl_id'].n_unique()}")
 
 
 # ---------------------------------------------------------------- helpers
-def fit_beta_binomial(k, n):
-    def nll(p):
-        a, b = np.exp(p)
-        return -np.sum(special.betaln(k + a, n - k + b) - special.betaln(a, b))
-    res = optimize.minimize(nll, x0=np.log([2.0, 20.0]), method="Nelder-Mead", options={"xatol": 1e-8, "fatol": 1e-10})
-    return np.exp(res.x)
-
-
 def player_table(e):
     return e.group_by("nfl_id").agg(
         pl.len().alias("rushes"),
@@ -90,7 +69,11 @@ def boot_r(x, y, rank=False):
     if rank:
         xs, ys = stats.rankdata(xs, axis=1), stats.rankdata(ys, axis=1)
     xm, ym = xs - xs.mean(1, keepdims=True), ys - ys.mean(1, keepdims=True)
-    r = (xm * ym).sum(1) / np.sqrt((xm ** 2).sum(1) * (ym ** 2).sum(1))
+    with np.errstate(invalid="ignore", divide="ignore"):
+        r = (xm * ym).sum(1) / np.sqrt((xm ** 2).sum(1) * (ym ** 2).sum(1))
+    undefined = int(np.isnan(r).sum())
+    if undefined:
+        print(f"   note: {undefined} of {B} bootstrap replicates were undefined (no variation) and were dropped")
     return np.nanpercentile(r, [2.5, 97.5])
 
 
@@ -122,13 +105,6 @@ def boot_coef(d, y, xs, name):
         k = RNG.integers(0, n, n)
         out[i] = np.linalg.lstsq(X[k], Y[k], rcond=None)[0][j]
     return np.percentile(out, [2.5, 97.5])
-
-
-def loo_r2(y, X):
-    X1 = np.column_stack([np.ones(len(y)), X])
-    H = X1 @ np.linalg.pinv(X1.T @ X1) @ X1.T
-    loo = (y - H @ y) / (1 - np.diag(H))
-    return 1 - (loo ** 2).sum() / ((y - y.mean()) ** 2).sum()
 
 
 def fmt(c):
@@ -280,7 +256,10 @@ print(f"   H3 all DL players: {fmt_h3(rob['H3_all_players'])}")
 results["robustness"] = rob
 
 # ---------------------------------------------------------------- descriptive: quartiles of Combine burst
-qs = df.with_columns(pl.col("forty_burst15_mean").qcut(4, labels=["Q1 fastest", "Q2", "Q3", "Q4 slowest"]).alias("q"))
+with warnings.catch_warnings():
+    # qcut is deprecated in polars 2.x; kept so the quartile split stays identical to the first run
+    warnings.simplefilter("ignore", DeprecationWarning)
+    qs = df.with_columns(pl.col("forty_burst15_mean").qcut(4, labels=["Q1 fastest", "Q2", "Q3", "Q4 slowest"]).alias("q"))
 desc = qs.group_by("q").agg(pl.len().alias("players"), pl.col("forty_burst15_mean").mean().round(3).alias("combine_burst15"),
                             pl.col("g_burst15").mean().round(3).alias("game_burst15"), pl.col("eb_rate").mean().round(4).alias("eb_pressure_rate"),
                             pl.col("draft_overall_pick").mean().round(1).alias("mean_pick_drafted"),

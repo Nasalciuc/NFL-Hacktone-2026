@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Rebuilds every result, log and figure from the Kaggle data.
 # Usage: bash run_all.sh [DATA_DIR]   (default: ./nfl-big-data-bowl-2027, the folder with the CSVs)
+# Warnings are not silenced: common.py prints them into the logs (category and message, no local paths).
 set -euo pipefail
 cd "$(dirname "$0")"
 DATA="${1:-nfl-big-data-bowl-2027}"
@@ -14,20 +15,21 @@ echo "== DL: first-step measures in games and at the Combine"
 "$PY" dl_first_step/game_starts.py "$DATA" "$DL" | tee "$DL/game_starts_log.txt"
 "$PY" dl_first_step/combine_starts.py "$DATA" "$DL" | tee "$DL/combine_starts_log.txt"
 
-echo "== DL: pre-registered tests H1-H4 (as first written, then corrected definition)"
-"$PY" -W ignore dl_first_step/tests.py "$DATA" "$DL" --as-written | tee "$DL/tests_log_as_written.txt"
-"$PY" -W ignore dl_first_step/tests.py "$DATA" "$DL" | tee "$DL/tests_log.txt"
+echo "== DL: planned tests H1-H4 (as first written, then corrected definition)"
+"$PY" dl_first_step/tests.py "$DATA" "$DL" --as-written | tee "$DL/tests_log_as_written.txt"
+"$PY" dl_first_step/tests.py "$DATA" "$DL" | tee "$DL/tests_log.txt"
 "$PY" dl_first_step/cv_h4.py "$DATA" "$DL" | tee "$DL/cv_h4_log.txt"
 
-echo "== DL: post-hoc checks from the second review round"
-"$PY" -W ignore dl_first_step/review_round2.py "$DATA" "$DL" | tee "$DL/review_round2_log.txt"
+echo "== DL: post-hoc checks from the review rounds"
+"$PY" dl_first_step/review_round2.py "$DATA" "$DL" | tee "$DL/review_round2_log.txt"
+"$PY" dl_first_step/review_round3.py "$DATA" "$DL" | tee "$DL/review_round3_log.txt"
 
 echo "== WR: break measures and their stability (no outcome tests)"
-"$PY" -W ignore wr_breaks/wr_measures.py "$DATA" "$WR" 0.7 | tee "$WR/wr_measures_log_dip70.txt"
-"$PY" -W ignore wr_breaks/wr_measures.py "$DATA" "$WR" 0.8 | tee "$WR/wr_measures_log_dip80.txt"
+"$PY" wr_breaks/wr_measures.py "$DATA" "$WR" 0.7 | tee "$WR/wr_measures_log_dip70.txt"
+"$PY" wr_breaks/wr_measures.py "$DATA" "$WR" 0.8 | tee "$WR/wr_measures_log_dip80.txt"
 
 echo "== figures for the writeup"
-"$PY" -W ignore dl_first_step/figures.py "$DATA" "$DL"
+"$PY" dl_first_step/figures.py "$DATA" "$DL"
 
 echo "== copy every chart into grafice/"
 mkdir -p grafice

@@ -13,11 +13,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
-from scipy import optimize, special, stats
+from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from common import KEY, REP, anchored_measures, parse_time, read
+from common import KEY, REP, anchored_measures, eligible_plays, fit_beta_binomial, parse_time, read
 
 DATA, OUT = sys.argv[1], sys.argv[2]
 FIG = os.path.join(HERE, "figures")
@@ -40,8 +40,8 @@ def style(ax, grid="y"):
     ax.tick_params(length=0)
 
 
-def heading(ax, title, sub):
-    ax.set_title(title, loc="left", fontsize=12.5, fontweight="bold", color=INK, pad=26)
+def heading(ax, title, sub, pad=26):
+    ax.set_title(title, loc="left", fontsize=12.5, fontweight="bold", color=INK, pad=pad)
     ax.text(0, 1.035, sub, transform=ax.transAxes, fontsize=9.5, color=INK2, va="bottom")
 
 
@@ -59,15 +59,12 @@ def wilson(k, n, z=1.96):
     return c - h, c + h
 
 
-def fit_prior(k, n):
-    nll = lambda p: -np.sum(special.betaln(k + np.exp(p[0]), n - k + np.exp(p[1])) - special.betaln(np.exp(p[0]), np.exp(p[1])))
-    return np.exp(optimize.minimize(nll, np.log([2.0, 20.0]), method="Nelder-Mead").x)
+fit_prior = fit_beta_binomial
 
 
 # ---------------------------------------------------------------- data
 plays = pl.read_parquet(os.path.join(OUT, "game_rush_plays.parquet"))
-elig = plays.filter(pl.col("stance_start") & pl.col("lined_up_position").is_in(list(ALIGN))
-                    & (pl.col("play_nullified_by_penalty") == "N") & (pl.col("blitzing") == True))
+elig = eligible_plays(plays)
 comb = pl.read_parquet(os.path.join(OUT, "combine_dl_players.parquet"))
 players = read(DATA, "players.csv")
 res = json.load(open(os.path.join(OUT, "tests_results_rushers_only.json")))
@@ -243,7 +240,8 @@ save(fig, "f4_what_explains_nfl_first_step.png")
 # ---------------------------------------------------------------- F5 (H3) pressure vs in-game first step
 XMAX = 0.95
 fig, ax = plt.subplots(figsize=(8.4, 4.7))
-bins = (elig.drop_nulls("burst_15")
+main_plays = elig.join(df.select("nfl_id"), on="nfl_id", how="semi")  # the planned H3 sample: the 62 main-sample players
+bins = (main_plays.drop_nulls("burst_15")
         .with_columns(((pl.col("burst_15").rank("ordinal").over("lined_up_position") - 1) * 10
                        // pl.len().over("lined_up_position")).alias("dec")))
 for key, (label, color) in ALIGN.items():
@@ -259,18 +257,20 @@ for key, (label, color) in ALIGN.items():
         ax.annotate(f"slowest {label.lower()} decile, off the axis at {xo:.2f} s", (XMAX + 0.004, po), xytext=(-2, -16),
                     textcoords="offset points", ha="right", fontsize=8.5, color=INK2)
 ax.set_xlim(0.53, XMAX + 0.015)
+ax.set_ylim(bottom=1.5)  # room for the label of the off-axis decile
 handles = [matplotlib.lines.Line2D([0], [0], color=c, lw=2, marker="o", ms=6, mec=c) for _, c in ALIGN.values()]
 ax.legend(handles, [lab for lab, _ in ALIGN.values()], loc="lower left")
-h3, fe = res["robustness"]["H3_all_players"], rev["H3_decomposed"]["all_98"]["burst_15"]
-ax.text(0.98, 0.96, f"Situation held equal ({h3['players']} DL): 1 SD faster first step {100 * h3['rate_fast_1sd']:.1f}% pressure, "
-        f"1 SD slower {100 * h3['rate_slow_1sd']:.1f}%\nSame player, faster than his own average (fixed effects): "
-        f"OR {fe['fixed_effects_or']:.2f} per SD slower [{fe['fixed_effects_ci'][0]:.2f}, {fe['fixed_effects_ci'][1]:.2f}]",
+h3, fe = res["H3"], rev["H3_decomposed"]["main_62"]["burst_15"]
+ax.text(0.98, 0.96, f"Situation held equal: a play 1 SD faster {100 * h3['rate_fast_1sd']:.1f}% pressure, "
+        f"a play 1 SD slower {100 * h3['rate_slow_1sd']:.1f}%\nWithin the same player (fixed effects): "
+        f"OR {fe['fixed_effects_or']:.2f} per play-level SD slower [{fe['fixed_effects_ci'][0]:.2f}, {fe['fixed_effects_ci'][1]:.2f}]",
         transform=ax.transAxes, ha="right", va="top", fontsize=8.5, color=INK2)
 ax.set_xlabel("in-game first step: seconds to cover 1.5 yd after reaching 1 yd/s (deciles)")
 ax.set_ylabel("plays with a pressure (%)")
 style(ax)
 heading(ax, "Plays with a faster first step are plays with more pressure",
-        f"H3, regular-season pass rushes by {elig['nfl_id'].n_unique()} DL; bars are 95% CIs. An association: blocking also sets the first step")
+        f"H3: {main_plays.height:,} regular-season rushes by the {main_plays['nfl_id'].n_unique()} DL of the main sample; "
+        f"bars are 95% CIs.\nSD = variation from play to play. An association: blocking also shapes the first step", pad=40)
 save(fig, "f5_pressure_vs_first_step.png")
 
 # ---------------------------------------------------------------- F6 (H4) Combine first step vs pressure, by role

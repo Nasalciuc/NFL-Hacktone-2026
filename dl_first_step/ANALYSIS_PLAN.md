@@ -3,6 +3,8 @@
 Scris pe 9 noiembrie 2026, **înainte** de orice test al legăturii dintre Combine și NFL.
 Măsurile de mai jos au fost alese doar după cât de bine măsoară, fără să ne uităm la rezultatele din NFL.
 
+E un plan scris, nu o înregistrare externă. Planul și codul testelor (`tests.py`) au intrat în același commit, deci istoricul git nu dovedește ordinea. Ordinea e documentată doar aici. De aceea în lucrare îl numim „planned before testing”, nu „pre-registered”.
+
 ## Întrebarea
 Poate tracking-ul de la Combine să măsoare primul pas al unui pass rusher mai bine decât cronometrul? Și se vede acest prim pas în sezonul regulat NFL, în primul pas din meciuri și în presiunea pe quarterback?
 
@@ -96,6 +98,20 @@ Toate verificările de aici au fost cerute de un coleg după ce rezultatele erau
 | Corecția pentru atenuare | Plafonul corelației observabile e 0,77; estimarea corectată e +0,05 [−0,24; +0,38] |
 | Jucătorii lipsă din eșantion (17) | 16 au sărit peste 40 de yarzi. Au fost aleși mai devreme la draft (mediana 66 față de 124) și joacă mai mult pe edge; diferențele nu sunt clare statistic |
 | Ordinea figurilor și culorile | Figurile urmează acum H1–H4. Graficele de control folosesc aceleași culori ca lucrarea |
+
+## A treia rundă de recenzie (post-hoc, 9 noiembrie 2026)
+Cod în `review_round3.py`, jurnal în `outputs/review_round3_log.txt`.
+
+| Cerere | Rezultat |
+|---|---|
+| Cifrele H3 trebuie să vină dintr-un singur eșantion | Peste tot e acum eșantionul din plan (62): 12,4% față de 7,2%, OR 0,74 [0,65; 0,84]; cu efecte fixe de jucător OR 0,74 [0,66; 0,84]. Varianta pe 98 apare doar ca verificare de robustețe |
+| H1 cu măsurile alternative, ajustate | Corelațiile neajustate pozitive (Spearman +0,26; 2,5 yd +0,25; accelerația +0,27) dispar după greutate (−0,04 până la +0,10). Accelerația păstrează cel mai mare rest după greutate și rol: +0,23 [−0,01; +0,47] |
+| Rolul ca mediator | Ținând cont de greutate, primul pas de la Combine nu prezice proporția fazelor pe edge (β standardizat +0,04, p = 0,67); greutatea o prezice puternic (β −0,86) |
+| H1 ajustat doar pentru greutate (variabilă dinainte de draft) | r = −0,00 [−0,24; +0,25] |
+| Interiorul cu specificația H4 (draft, 10 yarzi, rol) | r parțial −0,46 [−0,71; +0,04], β −0,43, p = 0,17. Mărimea rămâne, dar intervalul atinge zero |
+| „1 SD” în H3 | Înseamnă variația de la o fază la alta. Mediile jucătorilor diferă cu doar 0,15 SD de fază. Pe un SD între jucători, OR = 0,87 [0,78; 0,98] |
+| Formularea „pre-registered” | Înlocuită cu „planned before testing”, plus nota despre istoricul git de la începutul planului |
+| Cod duplicat, `-W ignore`, eșecuri bootstrap, convergența prior-ului | Totul e acum în `common.py`. Avertismentele apar în jurnale, fără căi locale; eșecurile bootstrap sunt numărate; prior-ul se oprește dacă nu converge. Rezultatele vechi rămân identice: diferențele sunt sub 3·10⁻⁶ |
 
 ## Ce nu putem afirma
 - **Eșantion mic:** 62 de jucători; doar corelațiile de peste circa 0,35 pot fi demonstrate sigur.

@@ -1,11 +1,112 @@
 """Shared helpers for the DL first-step project."""
 import os
+import warnings
 
 import numpy as np
 import polars as pl
+from scipy import optimize, special
 
 KEY = ["game_id", "play_id", "nfl_id"]
 REP = ["event_id", "nfl_id", "attempt"]
+
+
+def _print_warning(message, category, filename, lineno, file=None, line=None):
+    """Show warnings in the logs (stdout), without local file paths."""
+    print(f"WARNING {category.__name__}: {str(message).splitlines()[0][:200]}", flush=True)
+
+
+warnings.showwarning = _print_warning
+
+
+def eligible_plays(plays, games=None, rushers_only=True):
+    """Regular-season DL pass rushes used by every analysis.
+
+    Stance start, lined up on the edge or the interior, not nullified by a penalty and, by default,
+    the player actually rushed (`blitzing` true; see "Abateri" in ANALYSIS_PLAN.md). With `games`,
+    also adds the score difference from the defense's side and groups formations with fewer than
+    100 plays as OTHER, which the play-level models need.
+    """
+    e = plays.filter(pl.col("stance_start") & pl.col("lined_up_position").is_in(["EDGE", "INTERIOR_LINE"])
+                     & (pl.col("play_nullified_by_penalty") == "N"))
+    if games is not None:
+        e = (e.join(games.select("game_id", "home_team_abbr"), on="game_id")
+             .with_columns(pl.when(pl.col("team_abbr") == pl.col("home_team_abbr"))
+                           .then(pl.col("pre_snap_home_score") - pl.col("pre_snap_visitor_score"))
+                           .otherwise(pl.col("pre_snap_visitor_score") - pl.col("pre_snap_home_score")).alias("score_diff_def")))
+    e = e.with_columns((pl.col("lined_up_position") == "EDGE").cast(pl.Float64).alias("edge"),
+                       pl.col("pressure").cast(pl.Float64).alias("pressure_f"))
+    if rushers_only:
+        e = e.filter(pl.col("blitzing") == True)
+    if games is not None:
+        rare = e.group_by("offense_formation").len().filter(pl.col("len") < 100)["offense_formation"]
+        e = e.with_columns(pl.when(pl.col("offense_formation").is_null() | pl.col("offense_formation").is_in(rare.drop_nulls().implode()))
+                           .then(pl.lit("OTHER")).otherwise(pl.col("offense_formation")).alias("offense_formation"))
+    return e
+
+
+def fit_beta_binomial(k, n):
+    """Beta prior (a, b) for pressure rates, by maximum likelihood; stops if the fit does not converge."""
+    k, n = np.asarray(k, float), np.asarray(n, float)
+
+    def nll(p):
+        a, b = np.exp(p)
+        return -np.sum(special.betaln(k + a, n - k + b) - special.betaln(a, b))
+
+    res = optimize.minimize(nll, x0=np.log([2.0, 20.0]), method="Nelder-Mead",
+                            options={"xatol": 1e-8, "fatol": 1e-10, "maxiter": 5000})
+    if not res.success:
+        raise RuntimeError(f"beta-binomial fit did not converge: {res.message}")
+    return np.exp(res.x)
+
+
+def loo_errors(y, X):
+    """Leave-one-out residuals of a linear regression with intercept (closed form)."""
+    X1 = np.column_stack([np.ones(len(y)), X])
+    H = X1 @ np.linalg.pinv(X1.T @ X1) @ X1.T
+    return (y - H @ y) / (1 - np.diag(H))
+
+
+def loo_r2(y, X):
+    e = loo_errors(y, X)
+    return 1 - (e ** 2).sum() / ((y - y.mean()) ** 2).sum()
+
+
+def boot_ci(fn, n, rng, b):
+    """Percentile 95% interval of fn(resampled indices); failed or undefined replicates are counted and reported."""
+    vals, failed = [], 0
+    for _ in range(b):
+        k = rng.integers(0, n, n)
+        try:
+            v = fn(k)
+        except Exception:
+            failed += 1
+            continue
+        if np.isnan(v):
+            failed += 1
+        else:
+            vals.append(v)
+    if failed:
+        print(f"   note: {failed} of {b} bootstrap replicates failed or were undefined and were dropped", flush=True)
+    return [float(np.percentile(vals, 2.5)), float(np.percentile(vals, 97.5))]
+
+
+def residualize(v, Z):
+    Z1 = np.column_stack([np.ones(len(v)), Z])
+    return v - Z1 @ np.linalg.lstsq(Z1, v, rcond=None)[0]
+
+
+def partial_r(x, y, Z, rng, b, rank=False):
+    """Correlation of x and y after removing the linear effect of Z (ranks first if rank=True), with bootstrap CI."""
+    from scipy.stats import rankdata
+    x, y, Z = np.asarray(x, float), np.asarray(y, float), np.asarray(Z, float).reshape(len(x), -1)
+
+    def r_of(k):
+        xx, yy, ZZ = x[k], y[k], Z[k]
+        if rank:
+            xx, yy, ZZ = rankdata(xx), rankdata(yy), np.column_stack([rankdata(c) for c in ZZ.T])
+        return np.corrcoef(residualize(xx, ZZ), residualize(yy, ZZ))[0, 1]
+
+    return {"n": int(len(x)), "r": float(r_of(np.arange(len(x)))), "ci": boot_ci(r_of, len(x), rng, b)}
 
 
 def read(data, name, **kw):

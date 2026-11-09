@@ -56,12 +56,12 @@ main sample players: 62
    acc_02    within player: OR 1.143 per SD [1.085, 1.205] p 4.6e-07 (within-player SD = 0.98) | between players: OR 1.949 [1.422, 2.673] p 3.4e-05 | player fixed effects: OR 1.146 [1.088, 1.207] p 2.3e-07  (26,129 plays, 98 players)
 
 == Combine first step vs pressure, by role (exploratory)
-   INTERIOR_LINE: positions {'DE': 6, 'DT': 24, 'NT': 4}
+   INTERIOR_LINE: positions {'DT': 24, 'NT': 4, 'DE': 6}
       shrunk to global mean r -0.491 [-0.707, -0.150] n 34 p 0.0032 | to group mean r -0.489 [-0.693, -0.193] n 34 p 0.0033
       Spearman -0.461 (p 0.006); jackknife r range -0.535 to -0.402
       Combine first step vs weight r +0.139; partial r after weight r -0.473 [-0.697, -0.114] n 34; after weight + NT r -0.479 [-0.703, -0.097] n 34
       OLS (standardized) beta -0.469 [-0.764, -0.174] p 0.0018 with ['combine_weight', 'nt']
-   EDGE: positions {'DE': 17, 'OLB': 11}
+   EDGE: positions {'OLB': 11, 'DE': 17}
       shrunk to global mean r +0.140 [-0.157, +0.477] n 28 p 0.4776 | to group mean r +0.158 [-0.140, +0.504] n 28 p 0.4221
       Spearman +0.228 (p 0.244); jackknife r range +0.043 to +0.264
       Combine first step vs weight r +0.270; partial r after weight r +0.225 [-0.092, +0.538] n 28

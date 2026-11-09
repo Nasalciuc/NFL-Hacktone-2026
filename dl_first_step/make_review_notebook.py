@@ -31,7 +31,7 @@ md("""
 
 Notebook-ul arată tot ce am făcut până acum, astfel încât **să poată fi citit și criticat fără acces la date**. A fost rulat pe datele Kaggle, iar toate rezultatele (tabele și grafice) sunt salvate în el.
 
-- **Ce conține:** codul măsurătorilor, validările, stabilitatea, testele pre-înregistrate H1–H4, toate verificările de robustețe, coeficienții modelelor, răspunsurile la recenzie și lista deciziilor care pot fi contestate.
+- **Ce conține:** codul măsurătorilor, validările, stabilitatea, testele H1–H4 planificate înainte de rulare, toate verificările de robustețe, coeficienții modelelor, răspunsurile la cele două runde de recenzie și lista deciziilor care pot fi contestate.
 - **Ce nu conține:** rânduri din datele competiției sau valori pe jucător. Regulile Kaggle nu permit redistribuirea datelor, așa că toate rezultatele sunt agregate.
 - **Cum se refac:** cu datele descărcate, `bash run_all.sh`, apoi `python dl_first_step/make_review_notebook.py`.
 
@@ -39,12 +39,13 @@ Notebook-ul arată tot ce am făcut până acum, astfel încât **să poată fi 
 1. Datele și eșantionul
 2. Cum măsurăm primul pas
 3. Cât de stabile sunt măsurile
-4. Testele pre-înregistrate și verificările de robustețe
+4. Testele planificate și verificările de robustețe
 5. H1 și H2: Combine → primul pas din NFL
 6. H3: primul pas din meci și presiunea
 7. H4: Combine → presiune
-8. Deciziile care pot fi contestate
-9. Întrebări deschise, unde ar ajuta propunerile
+8. A treia rundă de recenzie
+9. Deciziile care pot fi contestate
+10. Întrebări deschise, unde ar ajuta propunerile
 """)
 
 code("""
@@ -80,8 +81,8 @@ rev = json.load(open(os.path.join(OUT, "review_round2.json")))
 plays = pl.read_parquet(os.path.join(OUT, "game_rush_plays.parquet"))
 creps = pl.read_parquet(os.path.join(OUT, "combine_reps.parquet"))
 cdl = pl.read_parquet(os.path.join(OUT, "combine_dl_players.parquet"))
-elig = plays.filter(pl.col("stance_start") & pl.col("lined_up_position").is_in(["EDGE", "INTERIOR_LINE"])
-                    & (pl.col("play_nullified_by_penalty") == "N") & (pl.col("blitzing") == True))
+rev3 = json.load(open(os.path.join(OUT, "review_round3.json")))
+elig = common.eligible_plays(plays)   # the same filter every script uses
 print(f"faze eligibile: {elig.height:,}; jucători: {elig['nfl_id'].n_unique()}")
 """)
 
@@ -224,9 +225,9 @@ display(Image(filename=os.path.join(FIG, "f2_reliability.png")))
 """)
 
 md("""
-## 4. Testele pre-înregistrate și verificările de robustețe
+## 4. Testele planificate și verificările de robustețe
 
-Ipotezele au fost scrise în `ANALYSIS_PLAN.md` înainte de orice test. Testele principale sunt H1, H3 și H4, cu corecția Holm. H2 e descriptiv.
+Ipotezele au fost scrise în `ANALYSIS_PLAN.md` înainte de orice test. E un plan scris, nu o înregistrare externă. Planul și `tests.py` au intrat în același commit, deci ordinea e documentată în plan, nu dovedită de git. Testele principale sunt H1, H3 și H4, cu corecția Holm. H2 e descriptiv.
 
 - **Definiția din plan:** toate rândurile cu `sack` completat.
 - **Definiția corectată:** scoate cele 4,6% faze în care jucătorul s-a retras în acoperire.
@@ -308,22 +309,14 @@ pd.DataFrame([{"model": k, "R² leave-one-out": v["r2"], "IC 95% (bootstrap pe j
 md("""
 ## 6. H3: primul pas din meci și presiunea
 
-**Modelul principal:** regresie logistică pe faze, pentru cei 62 de jucători. Erorile standard sunt grupate pe jucător. Toți coeficienții sunt afișați ca odds ratio, ca să se vadă și variabilele de control. `m_z` e primul pas standardizat în interiorul alinierii.
+**Modelul principal:** regresie logistică pe faze, pentru cei 62 de jucători din plan. Erorile standard sunt grupate pe jucător. Toți coeficienții sunt afișați ca odds ratio, ca să se vadă și variabilele de control. `m_z` e primul pas standardizat în interiorul alinierii, deci **1 SD înseamnă variația de la o fază la alta**, nu diferența dintre jucători.
 """)
 
 code("""
 games = common.read(DATA, "games.csv")
 gp = elig.group_by("nfl_id").agg(pl.len().alias("n"))
 main_ids = gp.filter(pl.col("n") >= 50).join(cdl.filter(pl.col("forty_burst15_mean").is_not_null()), on="nfl_id").select("nfl_id")
-d = (elig.join(main_ids, on="nfl_id", how="semi").join(games.select("game_id", "home_team_abbr"), on="game_id")
-     .with_columns(pl.when(pl.col("team_abbr") == pl.col("home_team_abbr"))
-                   .then(pl.col("pre_snap_home_score") - pl.col("pre_snap_visitor_score"))
-                   .otherwise(pl.col("pre_snap_visitor_score") - pl.col("pre_snap_home_score")).alias("score_diff_def"),
-                   (pl.col("lined_up_position") == "EDGE").cast(pl.Float64).alias("edge"),
-                   pl.col("pressure").cast(pl.Float64).alias("pressure_f")))
-rare = elig.group_by("offense_formation").len().filter(pl.col("len") < 100)["offense_formation"]
-d = (d.with_columns(pl.when(pl.col("offense_formation").is_null() | pl.col("offense_formation").is_in(rare.drop_nulls().implode()))
-                    .then(pl.lit("OTHER")).otherwise(pl.col("offense_formation")).alias("offense_formation"))
+d = (common.eligible_plays(plays, games).join(main_ids, on="nfl_id", how="semi")
       .drop_nulls(["burst_15", "t_react", "down", "yards_to_go", "score_diff_def"])
       .with_columns(((pl.col("burst_15") - pl.col("burst_15").mean().over("lined_up_position"))
                      / pl.col("burst_15").std().over("lined_up_position")).alias("m_z")))
@@ -349,6 +342,9 @@ for sample, block in rev["H3_decomposed"].items():
                      "IC efecte fixe": ci(v["fixed_effects_ci"]), "faze": v["plays"]})
 display(pd.DataFrame(rows))
 print("acc_02 e o accelerație (mai mare = mai rapid), deci acolo OR > 1 înseamnă același lucru ca OR < 1 la primul pas.")
+s3 = rev3["h3_scales"]
+print(f"Mediile jucătorilor diferă cu doar {s3['sd_of_player_averages_in_play_sd_units']:.2f} SD de fază. "
+      f"Pe un SD între jucători (mai lent): OR {s3['or_between_per_player_sd']:.3f} {ci(s3['or_between_per_player_sd_ci'])}.")
 display(Image(filename=os.path.join(FIG, "f5_pressure_vs_first_step.png")))
 """)
 
@@ -385,7 +381,52 @@ display(Image(filename=os.path.join(FIG, "f6_pressure_by_role.png")))
 """)
 
 md("""
-## 8. Deciziile care pot fi contestate
+## 8. A treia rundă de recenzie (post-hoc)
+
+Patru verificări cerute după runda a doua. Codul e în `review_round3.py`.
+
+**H1 cu toate măsurile, ajustate.** Corelațiile neajustate pozitive vin din greutate: jucătorii grei sunt mai lenți și la Combine, și în meci. Coloana „după greutate” folosește doar o variabilă cunoscută înainte de draft.
+""")
+
+code("""
+rows = []
+for meas, v in rev3["h1_by_measure"].items():
+    rows.append({"măsura": meas, "Pearson": v["pearson"]["r"], "IC Pearson": ci(v["pearson"]["ci"]), "p Pearson": v["pearson"]["p"],
+                 "Spearman": v["spearman"]["r"], "IC Spearman": ci(v["spearman"]["ci"]),
+                 "după greutate": v["partial_weight_only"]["r"], "IC după greutate": ci(v["partial_weight_only"]["ci"]),
+                 "după greutate și rol": v["partial_weight_role"]["r"], "IC după greutate și rol": ci(v["partial_weight_role"]["ci"]),
+                 "Spearman după greutate și rol": v["partial_spearman_weight_role"]["r"]})
+pd.DataFrame(rows).set_index("măsura").T
+""")
+
+md("**Rolul ca mediator?** Dacă echipele i-ar muta pe edge pe jucătorii care pornesc repede, controlul pentru rol ar ascunde transferul. Verificăm dacă primul pas de la Combine prezice proporția fazelor pe edge.")
+
+code("""
+m3 = rev3["role_mediator"]
+pd.DataFrame([{"legătura cu proporția fazelor pe edge": "primul pas de la Combine, neajustat", "valoare": m3["r_unadjusted"]["r"], "IC": ci(m3["r_unadjusted"]["ci"])},
+              {"legătura cu proporția fazelor pe edge": "primul pas de la Combine, după greutate (r parțial)", "valoare": m3["partial_given_weight"]["r"],
+               "IC": ci(m3["partial_given_weight"]["ci"])},
+              {"legătura cu proporția fazelor pe edge": "regresie: beta standardizat, primul pas de la Combine", "valoare": m3["ols_std_beta_combine"],
+               "IC": ci(m3["ols_ci"])},
+              {"legătura cu proporția fazelor pe edge": "regresie: beta standardizat, greutate", "valoare": m3["ols_std_beta_weight"], "IC": ""}])
+""")
+
+md("**Semnalul de la interior cu specificația H4** (locul la draft, timpul pe 10 yarzi, proporția pe edge), cu ambele variante de shrinkage.")
+
+code("""
+rows = []
+for role, v in rev3["pressure_by_role_h4_spec"].items():
+    for shrink in ("eb_group", "eb_global"):
+        o = v[shrink]
+        rows.append({"rol": role, "shrinkage": "spre media rolului" if shrink == "eb_group" else "spre media globală", "n": v["n"],
+                     "beta standardizat": o["std_beta"], "IC HC3": ci(o["ci_hc3"]), "IC bootstrap": ci(o["ci_boot"]), "p": o["p"],
+                     "r parțial (controale H4)": o["partial_h4_controls"]["r"], "IC r parțial": ci(o["partial_h4_controls"]["ci"]),
+                     "r parțial + greutate + NT": o["partial_h4_controls_weight_nt"]["r"]})
+pd.DataFrame(rows)
+""")
+
+md("""
+## 9. Deciziile care pot fi contestate
 
 Fiecare rând e o alegere care schimbă rezultatele. Pentru fiecare e notat unde se modifică în cod și ce alternativă merită discutată.
 
@@ -394,20 +435,20 @@ Fiecare rând e o alegere care schimbă rezultatele. Pentru fiecare e notat unde
 | Ancora ceasului | viteza atinge 1 yd/s | `common.anchored_measures(s_on=1.0)` | Combine-ul taie variabil începutul | 0,5 sau 1,5 yd/s |
 | Distanța primului pas | 1,5 yd | `game_starts.py`, `combine_starts.py` (`dist`) | la edge se termină de obicei înainte de contact | 0,5 sau 1 yd; o fereastră în timp |
 | Start static | sub 1 yd/s la snap sau în primul cadru | `stance_start`, `clean_start` | același tip de start în ambele contexte | prag mai strict |
-| Faza de pass rush | `sack` completat și `blitzing` adevărat | `tests.py` | `blitzing` înseamnă că jucătorul a atacat | doar fazele de pasă cu `pass_result` |
+| Faza de pass rush | `sack` completat și `blitzing` adevărat | `common.eligible_plays` | `blitzing` înseamnă că jucătorul a atacat | doar fazele de pasă cu `pass_result` |
 | Presiunea | `time_to_pressure` completat | `game_starts.py` | definiția NGS de presiune | doar sack; presiune rapidă |
 | Prag de faze pe jucător | 50 | `tests.py` (`MIN_RUSHES`) | echilibru între stabilitate și eșantion | 30 și 100 au fost testate |
 | Controalele din H3 | aliniere, down, distanță, formație, scor, reacție | `tests.py` (`logit_h3`) | context disponibil înainte de snap | sfertul, ceasul, adversarul |
 | Modelul H4 | regresie liniară, HC3, log(locul la draft) | `tests.py` | simplu și transparent | model ierarhic pe toate fazele |
-| Shrinkage | beta-binomial, spre media rolului | `figures.py`, `review_round2.py` | rate stabile pentru jucători cu puține faze | spre media globală (a dat același rezultat) |
+| Shrinkage | beta-binomial, spre media rolului | `common.fit_beta_binomial` | rate stabile pentru jucători cu puține faze | spre media globală (a dat același rezultat) |
 | Linia de scrimmage | din `yardline_number`, ±0,5 yd | `game_starts.py` | nu există poziția mingii | nu e folosită în măsurile principale |
 | Rolul unui jucător | edge dacă cel puțin 50% din faze sunt pe edge | `figures.py`, `review_round2.py` | rolul dominant | proporția ca variabilă continuă (folosită în H1 și H4) |
 """)
 
 md("""
-## 9. Întrebări deschise, unde ar ajuta propunerile
+## 10. Întrebări deschise, unde ar ajuta propunerile
 
-1. **Semnalul de la interior.** Rezistă controlului pentru greutate și NT, dar nu trece de pragul Bonferroni. Primul pas de la Combine nu prezice nici primul pas din NFL al acestor jucători. Ce ar putea măsura, de fapt? De exemplu, explozia în contact, nu viteza în spațiu liber. Ce măsură din exercițiile DL de la Combine ar putea testa asta? Atenție: aceste exerciții au o singură repetare pe jucător.
+1. **Semnalul de la interior.** Rezistă controlului pentru greutate și NT, dar nu trece de pragul Bonferroni. Cu specificația H4 completă, intervalul ajunge la zero (r = −0,46, p = 0,17). Primul pas de la Combine nu prezice nici primul pas din NFL al acestor jucători. Ce ar putea măsura, de fapt? De exemplu, explozia în contact, nu viteza în spațiu liber. Ce măsură din exercițiile DL de la Combine ar putea testa asta? Atenție: aceste exerciții au o singură repetare pe jucător.
 2. **H3 e o asociere.** Nu avem blocatorii în tracking, deci double team-urile și stunt-urile nu se pot controla. Există o variabilă din `player_play` care ar putea servi ca aproximare?
 3. **Modelarea.** Ar fi mai bun un model ierarhic, de exemplu un logistic mixt pe toate fazele cu primul pas de la Combine ca predictor la nivel de jucător, în locul analizei în doi pași pentru H1 și H4?
 4. **Povestea.** Lucrarea ar trebui să înceapă cu partea utilă pentru echipe (reacția și primul pas, măsurate din meciuri) și să pună rezultatul negativ de la Combine pe locul doi?
