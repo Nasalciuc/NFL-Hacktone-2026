@@ -25,4 +25,8 @@ echo "== WR: break measures and their stability (no outcome tests)"
 
 echo "== figures for the writeup"
 "$PY" -W ignore dl_first_step/figures.py "$DATA" "$DL" "$WR"
+
+echo "== copy every chart into grafice/"
+mkdir -p grafice
+cp dl_first_step/figures/*.png "$DL"/check_h1_h4_*.png grafice/
 echo "done"

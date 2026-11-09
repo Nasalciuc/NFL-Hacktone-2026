@@ -33,6 +33,7 @@ wr_breaks/               verificarea receptorilor (WR): de ce nu continuăm pe e
   WR_NOTES.md            concluzia
   wr_measures.py         măsurarea break-ului la Combine și în meciuri
   explore_wr.py          explorarea inițială
+grafice/                 toate graficele într-un singur loc, cu un index (README.md)
 run_all.sh               reface toate rezultatele și graficele
 requirements.txt         versiunile pachetelor folosite
 ```
