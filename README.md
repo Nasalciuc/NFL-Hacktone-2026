@@ -45,17 +45,53 @@ requirements.txt         versiunile pachetelor folosite
 ```
 
 ## Cum se reface totul
-1. Descarcă datele competiției de pe Kaggle și pune CSV-urile în folderul `nfl-big-data-bowl-2027/`, lângă `dl_first_step/`. **Datele nu sunt în repo**, pentru că regulile competiției interzic redistribuirea lor.
-2. Instalează pachetele:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Rulează tot:
-   ```bash
-   bash run_all.sh
-   ```
+**Datele nu sunt în repo.** Regulile competiției interzic redistribuirea lor, iar patru fișiere depășesc oricum limita GitHub de 100 MB. Fiecare membru al echipei le descarcă de pe Kaggle.
 
-Durează câteva minute pe un laptop. Fișierele `.parquet` intermediare se regenerează.
+### 1. Acces la date
+1. Intră în competiție pe [Kaggle](https://www.kaggle.com/competitions/nfl-big-data-bowl-2027) și acceptă regulile (**Join Competition**). Fără acest pas descărcarea dă eroarea 403.
+2. Creează un token API: pe Kaggle, *Settings → API → Create New Token*. Se descarcă fișierul `kaggle.json`. Pune-l în `~/.kaggle/kaggle.json`; pe Windows, în `C:\Users\<nume>\.kaggle\kaggle.json`. Tokenul e personal: nu-l pune în repo și nu-l trimite nimănui.
+
+### 2. Descarcă datele
+Din folderul repo-ului:
+```bash
+pip install kaggle
+```
+```bash
+kaggle competitions download -c nfl-big-data-bowl-2027 -p nfl-big-data-bowl-2027
+```
+```bash
+unzip nfl-big-data-bowl-2027/nfl-big-data-bowl-2027.zip -d nfl-big-data-bowl-2027
+```
+Pe Windows, fără `unzip`, poți folosi PowerShell:
+```powershell
+Expand-Archive nfl-big-data-bowl-2027\nfl-big-data-bowl-2027.zip -DestinationPath nfl-big-data-bowl-2027
+```
+
+Arhiva are circa 2,2 GB după dezarhivare. Folderul `nfl-big-data-bowl-2027/` și arhivele `.zip` sunt excluse din git prin `.gitignore`.
+
+### 3. Verifică fișierele
+În `nfl-big-data-bowl-2027/` trebuie să fie direct aceste 9 CSV-uri:
+
+| Fișier | Mărime aproximativă |
+|---|---|
+| `game_tracking_2025.csv` | 975 MB |
+| `game_tracking_2024.csv` | 685 MB |
+| `game_tracking_2023.csv` | 320 MB |
+| `player_play.csv` | 140 MB |
+| `combine_tracking.csv` | 80 MB |
+| `combine_results.csv`, `games.csv`, `players.csv`, `player_career_successes.csv` | sub 0,1 MB fiecare |
+
+Dacă după dezarhivare ajung într-un subfolder, dă calea acelui subfolder ca argument: `bash run_all.sh <cale>`.
+
+### 4. Rulează analiza
+```bash
+pip install -r requirements.txt
+```
+```bash
+bash run_all.sh
+```
+
+Durează circa 10 minute pe un laptop. Reface fișierele `.parquet`, jurnalele, rezultatele JSON și toate graficele, inclusiv folderul `grafice/`.
 
 ## Ce merită verificat
 - **Definiția primului pas** (`common.py`, `anchored_measures`). Ceasul pornește când jucătorul atinge 1 yd/s, nu la primul cadru, pentru că înregistrările de la Combine încep cu jucătorul deja în mișcare.
