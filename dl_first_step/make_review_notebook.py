@@ -1,7 +1,8 @@
 """Builds and runs review_notebook.ipynb: every result of the project, readable without the data.
 
-Usage (from the repository root, with the Kaggle data in ./nfl-big-data-bowl-2027 and run_all.sh already run):
-    python dl_first_step/make_review_notebook.py
+Usage (from the repository root, after run_all.sh):
+    python dl_first_step/make_review_notebook.py [DATA_DIR]
+DATA_DIR defaults to ./nfl-big-data-bowl-2027; the notebook reads it from the BDB_DATA environment variable.
 The executed notebook keeps all outputs, so GitHub shows tables and figures to readers who have no data.
 It prints aggregated results and code only, never raw rows of the competition data.
 """
@@ -14,6 +15,8 @@ from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 TARGET = os.path.join(ROOT, "dl_first_step", "review_notebook.ipynb")
+# the data folder is passed to the kernel through the environment, so it never appears in the saved notebook
+os.environ["BDB_DATA"] = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(ROOT, "nfl-big-data-bowl-2027")
 
 cells = []
 
@@ -61,7 +64,7 @@ ROOT = os.path.abspath(".")
 sys.path.insert(0, os.path.join(ROOT, "dl_first_step"))
 import common
 
-DATA = os.path.join(ROOT, "nfl-big-data-bowl-2027")
+DATA = os.environ.get("BDB_DATA", os.path.join(ROOT, "nfl-big-data-bowl-2027"))
 OUT = os.path.join(ROOT, "dl_first_step", "outputs")
 FIG = os.path.join(ROOT, "dl_first_step", "figures")
 pd.set_option("display.precision", 3)
