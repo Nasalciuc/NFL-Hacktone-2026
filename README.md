@@ -15,7 +15,7 @@ Ipotezele, măsurile și testele sunt scrise în `ANALYSIS_PLAN.md`. E un plan s
 |---|---|---|---|
 | H1: primul pas de la Combine → primul pas în NFL | F3 | r = +0,20 [−0,02; +0,45]; după greutate: −0,00 [−0,24; +0,25]; după greutate și rol: +0,04 | nesusținută (Holm p = 0,23) |
 | H2: legătura cu reacția; comparația cu cronometrul | F4 | cu reacția r = +0,13; timpul oficial pe 10 yarzi explică 42%, tracking-ul 0%; niciunul nu adaugă peste rol și greutate | descriptiv |
-| H3: faze cu prim pas mai rapid → mai multă presiune | F5 | o fază cu 1 SD mai rapidă: 12,4% presiune față de 7,2%; OR 0,74 [0,65; 0,84]; în cadrul aceluiași jucător tot OR 0,74. SD înseamnă variația de la o fază la alta | **susținută** (Holm p < 0,001) |
+| H3: faze cu get-off mai rapid → mai multă presiune | F5 | o fază cu 1 SD mai rapidă (0,17 s pe edge, 0,28 s la interior): 12,4% presiune față de 7,2%; OR 0,74 [0,65; 0,84]. Un prim pas cu 0,1 s mai rapid: +1,4 puncte; o reacție cu 0,1 s mai rapidă: +1,1 puncte. Rămâne și în cadrul aceluiași jucător și fără pasele rapide. Pseudo R² = 0,03 pe o singură fază | **susținută** (Holm p < 0,001) |
 | H4: Combine → presiune, peste draft și timpul pe 10 yarzi | F6 | −0,27 puncte procentuale pe SD; intervalul include 0; semnalul de la interior e doar o ipoteză | nesusținută (Holm p = 0,47) |
 
 **Eșantioanele:**
@@ -26,12 +26,13 @@ Ipotezele, măsurile și testele sunt scrise în `ANALYSIS_PLAN.md`. E un plan s
 **Rundele de recenzie** au adăugat verificări post-hoc, rezumate în `ANALYSIS_PLAN.md`:
 - **Runda a doua** (`review_round2.py`): fereastră scurtă de dinainte de contact, efecte fixe de jucător, controale pentru greutate și NT, stabilitate pe rol, corecția pentru atenuare și intervale pentru leave-one-out.
 - **Runda a treia** (`review_round3.py`): H1 cu măsurile alternative ajustate (Tabelul 2 din lucrare) și ajustat doar pentru greutate, verificarea rolului ca mediator, interiorul cu specificația H4 și efectul H3 exprimat pe jucător.
+- **Runda a patra** (`review_round4.py`): de ce filtrul de penalizări nu scoate nimic, H3 în secunde și puncte procentuale, plus pseudo R², H3 fără pasele rapide, modele ierarhice pentru H1 și H4 și impulsul la interior (explorator).
 
 ## Structura
 ```
 dl_first_step/           analiza principală
   ANALYSIS_PLAN.md       ipotezele, planificate înainte de teste, plus abaterile și rundele de recenzie
-  WRITEUP_DRAFT.md       varianta de lucru a textului pentru Kaggle (engleză, ~1.750 de cuvinte)
+  WRITEUP_DRAFT.md       varianta de lucru a textului pentru Kaggle (engleză, ~1.950 de cuvinte, limita e 2.000)
   common.py              tot codul comun: filtrul fazelor, timpul ancorat la 1 yd/s, prior-ul beta-binomial,
                          leave-one-out, bootstrap (cu numărarea eșecurilor) și afișarea avertismentelor
   game_starts.py         primul pas și reacția în fazele de pass rush din meciuri
@@ -40,6 +41,7 @@ dl_first_step/           analiza principală
   cv_h4.py               validarea leave-one-out pentru presiune (verificare descriptivă)
   review_round2.py       verificările post-hoc cerute în a doua rundă de recenzie
   review_round3.py       verificările post-hoc cerute în a treia rundă de recenzie
+  review_round4.py       verificările post-hoc cerute în a patra rundă de recenzie
   review_notebook.ipynb  notebook-ul de revizuire, rulat, cu toate rezultatele (se citește fără date)
   make_review_notebook.py  construiește și rulează notebook-ul de revizuire
   figures.py             cele 6 grafice din lucrare

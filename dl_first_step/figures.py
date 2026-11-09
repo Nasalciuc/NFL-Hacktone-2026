@@ -238,39 +238,55 @@ heading(ax, "Role and size explain the NFL first step; neither Combine time adds
 save(fig, "f4_what_explains_nfl_first_step.png")
 
 # ---------------------------------------------------------------- F5 (H3) pressure vs in-game first step
-XMAX = 0.95
-fig, ax = plt.subplots(figsize=(8.4, 4.7))
+rev4 = json.load(open(os.path.join(OUT, "review_round4.json")))
 main_plays = elig.join(df.select("nfl_id"), on="nfl_id", how="semi")  # the planned H3 sample: the 62 main-sample players
-bins = (main_plays.drop_nulls("burst_15")
-        .with_columns(((pl.col("burst_15").rank("ordinal").over("lined_up_position") - 1) * 10
-                       // pl.len().over("lined_up_position")).alias("dec")))
-for key, (label, color) in ALIGN.items():
-    d = (bins.filter(pl.col("lined_up_position") == key).group_by("dec")
-         .agg(pl.col("burst_15").median().alias("x"), pl.col("pressure").sum().alias("k"), pl.len().alias("n")).sort("dec"))
-    x, p = d["x"].to_numpy(), (d["k"] / d["n"]).to_numpy() * 100
-    lo, hi = wilson(d["k"].to_numpy(), d["n"].to_numpy())
-    inside = x <= XMAX
-    ax.vlines(x[inside], lo[inside] * 100, hi[inside] * 100, color=color, lw=1.2, alpha=0.5)
-    ax.plot(x[inside], p[inside], color=color, marker="o", ms=7, mec=SURF, mew=2)
-    for xo, po in zip(x[~inside], p[~inside]):
-        ax.scatter(XMAX + 0.004, po, s=50, facecolor=SURF, edgecolor=color, linewidth=2, zorder=3)
-        ax.annotate(f"slowest {label.lower()} decile, off the axis at {xo:.2f} s", (XMAX + 0.004, po), xytext=(-2, -16),
-                    textcoords="offset points", ha="right", fontsize=8.5, color=INK2)
-ax.set_xlim(0.53, XMAX + 0.015)
-ax.set_ylim(bottom=1.5)  # room for the label of the off-axis decile
+
+
+def decile_panel(ax, col, xmin, xmax, xlabel):
+    """Pressure rate by within-alignment deciles of `col`; deciles beyond xmax are drawn at the edge and labelled."""
+    bins = (main_plays.drop_nulls(col)
+            .with_columns(((pl.col(col).rank("ordinal").over("lined_up_position") - 1) * 10
+                           // pl.len().over("lined_up_position")).alias("dec")))
+    for key, (label, color) in ALIGN.items():
+        d = (bins.filter(pl.col("lined_up_position") == key).group_by("dec")
+             .agg(pl.col(col).median().alias("x"), pl.col("pressure").sum().alias("k"), pl.len().alias("n")).sort("dec"))
+        x, p = d["x"].to_numpy(), (d["k"] / d["n"]).to_numpy() * 100
+        lo, hi = wilson(d["k"].to_numpy(), d["n"].to_numpy())
+        inside = x <= xmax
+        ax.vlines(x[inside], lo[inside] * 100, hi[inside] * 100, color=color, lw=1.2, alpha=0.5)
+        ax.plot(x[inside], p[inside], color=color, marker="o", ms=7, mec=SURF, mew=2)
+        for xo, po in zip(x[~inside], p[~inside]):
+            ax.scatter(xmax + 0.004, po, s=50, facecolor=SURF, edgecolor=color, linewidth=2, zorder=3)
+            ax.annotate(f"slowest {label.lower()} decile: {xo:.2f} s", (xmax + 0.004, po), xytext=(-2, -16),
+                        textcoords="offset points", ha="right", fontsize=8.5, color=INK2)
+    ax.set_xlim(xmin, xmax + 0.015)
+    ax.set_xlabel(xlabel)
+    style(ax)
+
+
+fig, (ax, ax2) = plt.subplots(1, 2, figsize=(12.4, 5.0), sharey=True, gridspec_kw={"wspace": 0.07})
+decile_panel(ax, "burst_15", 0.53, 0.95, "first step: seconds to cover 1.5 yd after reaching 1 yd/s")
+decile_panel(ax2, "t_react", 0.0, 0.62, "reaction: seconds from the snap to 1 yd/s")
+ax.set_ylim(bottom=1.5)  # room for the labels of off-axis deciles
+ax.set_ylabel("plays with a pressure (%)")
 handles = [matplotlib.lines.Line2D([0], [0], color=c, lw=2, marker="o", ms=6, mec=c) for _, c in ALIGN.values()]
 ax.legend(handles, [lab for lab, _ in ALIGN.values()], loc="lower left")
-h3, fe = res["H3"], rev["H3_decomposed"]["main_62"]["burst_15"]
-ax.text(0.98, 0.96, f"Situation held equal: a play 1 SD faster {100 * h3['rate_fast_1sd']:.1f}% pressure, "
-        f"a play 1 SD slower {100 * h3['rate_slow_1sd']:.1f}%\nWithin the same player (fixed effects): "
-        f"OR {fe['fixed_effects_or']:.2f} per play-level SD slower [{fe['fixed_effects_ci'][0]:.2f}, {fe['fixed_effects_ci'][1]:.2f}]",
-        transform=ax.transAxes, ha="right", va="top", fontsize=8.5, color=INK2)
-ax.set_xlabel("in-game first step: seconds to cover 1.5 yd after reaching 1 yd/s (deciles)")
-ax.set_ylabel("plays with a pressure (%)")
-style(ax)
-heading(ax, "Plays with a faster first step are plays with more pressure",
-        f"H3: {main_plays.height:,} regular-season rushes by the {main_plays['nfl_id'].n_unique()} DL of the main sample; "
-        f"bars are 95% CIs.\nSD = variation from play to play. An association: blocking also shapes the first step", pad=40)
+u = rev4["h3_units"]
+ax.text(0.98, 0.97, f"A play 1 SD faster ({u['sd_seconds']['EDGE']:.2f} s edge, {u['sd_seconds']['INTERIOR_LINE']:.2f} s interior):\n"
+        f"{100 * u['rate_play_1sd_faster']:.1f}% pressure vs {100 * u['rate_play_1sd_slower']:.1f}% for 1 SD slower\n"
+        f"every play 0.1 s faster: {u['pp_if_every_play_0p1s_faster']:+.1f} points; same player, 0.1 s faster\n"
+        f"than his own average: {u['within_player_pp_per_0p1s_faster_at_mean_rate']['EDGE']:+.1f} edge, "
+        f"{u['within_player_pp_per_0p1s_faster_at_mean_rate']['INTERIOR_LINE']:+.1f} interior",
+        transform=ax.transAxes, ha="right", va="top", fontsize=8.3, color=INK2)
+ax2.text(0.98, 0.97, f"Reaction 0.1 s faster on every play:\n{u['pp_if_reaction_0p1s_faster']:+.1f} points of pressure",
+         transform=ax2.transAxes, ha="right", va="top", fontsize=8.3, color=INK2)
+ax.set_title("First step", loc="left", fontsize=10.5, color=INK)
+ax2.set_title("Reaction to the snap", loc="left", fontsize=10.5, color=INK)
+fig.suptitle("Plays with a faster get-off are plays with more pressure", x=0.125, ha="left", fontsize=12.5, fontweight="bold", y=1.08)
+fig.text(0.125, 0.995, f"H3: {main_plays.height:,} regular-season rushes by the {main_plays['nfl_id'].n_unique()} DL of the main sample, "
+         f"deciles within edge and interior; bars are 95% CIs.\nSituation held equal in the model (down, distance, formation, score). "
+         f"An association: blocking also shapes the first step. Model pseudo R² = {u['pseudo_r2_mcfadden']:.3f}.",
+         fontsize=9.3, color=INK2)
 save(fig, "f5_pressure_vs_first_step.png")
 
 # ---------------------------------------------------------------- F6 (H4) Combine first step vs pressure, by role

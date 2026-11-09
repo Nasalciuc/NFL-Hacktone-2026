@@ -1,0 +1,32 @@
+== penalty filter: {'dl_rows_nullified': 3269, 'dl_rows_total': 68235, 'nullified_with_sack_field': 1, 'rush_rows_in_sample_nullified': 0}
+   plays nullified by a penalty carry no pass-rush fields in player_play, so the pass-rush definition already drops them
+main sample: 62 players, 20,022 rushes
+
+== H3 in football units (20,012 rushes, 62 players)
+   one play-level SD = 0.175 s on the edge, 0.284 s on the interior
+   a play 1 SD faster: 12.4% pressure; 1 SD slower: 7.2%
+   every play 0.1 s faster in the first step: +1.37 points of pressure
+   reaction 0.1 s faster on every play: +1.05 points
+   within the same player, 0.1 s faster than his own average (at the mean rate): EDGE +1.40 points, INTERIOR_LINE +0.88 points
+   McFadden pseudo R2 = 0.029 (a single play is mostly unexplained)
+
+== H3 without passes released under 2.5 s: 35.6% of rushes dropped (pressure on them 2.4%, on the rest 13.9%)
+   OR 0.768 [0.676, 0.871] p 4.4e-05; 1 SD faster 16.9% vs slower 10.8%
+WARNING ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+WARNING ConvergenceWarning: The MLE may be on the boundary of the parameter space.
+
+== hierarchical models
+   H1 weight and play alignment   : NFL first step changes -0.0004 s per SD of Combine first step [-0.0098, 0.0091] p 0.937 | player sd 0.0324 s, residual sd 0.234 s
+   H1 weight only                 : NFL first step changes -0.0012 s per SD of Combine first step [-0.0122, 0.0098] p 0.824 | player sd 0.0389 s, residual sd 0.234 s
+   H1 two-step, for comparison    : NFL first step changes +0.0015 s per SD of Combine first step [-0.0084, 0.0114] p 0.763
+   H4 mixed logistic, random intercept (variational Bayes): OR per SD slower Combine first step 0.932 [0.885, 0.981]
+   H4 pooled logistic, SE clustered by player: OR per SD slower Combine first step 0.943 [0.861, 1.033] p 0.206
+   H4 GEE, exchangeable, robust SE: OR per SD slower Combine first step 0.945 [0.867, 1.029] p 0.193
+
+== exploratory: momentum (weight x mean speed over the first 1.5 or 2.5 yd) vs pressure, by role
+   INTERIOR_LINE momentum_15: r +0.136 [-0.247, 0.453] p 0.442 | corr with weight +0.68 | after H4 controls r +0.364 [-0.107, 0.645]
+   INTERIOR_LINE momentum_25: r +0.151 [-0.213, 0.45] p 0.395 | corr with weight +0.68 | after H4 controls r +0.375 [-0.089, 0.642]
+   EDGE          momentum_15: r -0.285 [-0.578, 0.064] p 0.142 | corr with weight +0.47 | after H4 controls r -0.226 [-0.559, 0.143]
+   EDGE          momentum_25: r -0.284 [-0.558, 0.082] p 0.143 | corr with weight +0.51 | after H4 controls r -0.225 [-0.573, 0.161]
+
+saved review_round4.json

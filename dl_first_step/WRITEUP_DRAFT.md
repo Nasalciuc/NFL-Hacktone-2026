@@ -50,7 +50,7 @@ Across 62 players the Combine and NFL first steps are weakly related (r = +0.20)
 
 Role is not a hidden route for the Combine start either. Once weight is known, the Combine first step does not predict how often a player lines up on the edge (standardized β = +0.04, p = 0.67).
 
-Measurement noise does not explain the null. Reliability caps the observable correlation at 0.77, and the noise-corrected estimate is +0.05 (CI −0.24 to +0.38). The data rule out a strong link, not a small one.
+Measurement noise does not explain the null. Reliability caps the observable correlation at 0.77, and the noise-corrected estimate is +0.05 (CI −0.24 to +0.38). A linear mixed model on every rush agrees: −0.000 s per SD of the Combine first step (CI −0.010 to +0.009). The data rule out a strong link, not a small one.
 
 Table 2 shows the alternative measures. Their unadjusted links, including three with p < 0.05, also shrink once weight is known. Acceleration keeps the largest residual (+0.23 after weight and role, CI −0.01 to +0.47).
 
@@ -72,17 +72,23 @@ Out of sample, edge share explains 68% of the NFL first step and weight 59% (Fig
 
 ![Figure 4](figures/f4_what_explains_nfl_first_step.png)
 
-## H3: Plays with a faster first step are plays with more pressure
+## H3: Plays with a faster get-off are plays with more pressure
 
-Holding the situation equal (down, distance, formation, score, alignment and reaction time), **a play** whose first step is one SD faster comes with **12.4% pressure instead of 7.2%** (Figure 5). This SD is play-to-play variation, not a difference between players. *Post-hoc* results:
+Holding the situation equal (down, distance, formation, score, alignment and reaction time), **a play** whose first step is one SD faster comes with **12.4% pressure instead of 7.2%** (Figure 5). That SD is play-to-play variation: 0.17 s on the edge and 0.28 s on the interior.
 
-- **Within the same player** (player fixed effects): OR 0.74 per play-level SD slower (CI 0.66 to 0.84). It is not just faster edge rushers pressuring more.
+In tenths of a second, a first step 0.1 s quicker on every rush would add about 1.4 points of pressure. A reaction 0.1 s quicker adds about 1.1 points.
+
+*Post-hoc* checks:
+- **Within the same player** (fixed effects): a rush 0.1 s quicker than his own average adds about 1.4 points on the edge and 0.9 on the interior (OR 0.74 per play-level SD, CI 0.66 to 0.84). It is not just faster edge rushers pressuring more.
 - **In the pre-contact 0.5-yard window:** OR 0.86 (CI 0.79 to 0.93).
-- **Between players:** averages differ by only 0.15 play-level SD. Per player-level SD slower, the odds of pressure fall modestly (OR 0.87, CI 0.78 to 0.98).
+- **Without quick passes** (thrown within 2.5 s, 36% of rushes, pressured only 2.4% of the time): OR 0.77 (CI 0.68 to 0.87).
+- **Between players:** averages differ by only 0.15 play-level SD, so per player-level SD the effect is modest (OR 0.87, CI 0.78 to 0.98).
 
-Reaction matters on top of that: each extra tenth of a second cuts the odds of pressure by about 11%. With all 98 linemen the results are the same (12.5% vs 6.8%).
+With all 98 linemen the results are the same (12.5% vs 6.8%).
 
-This is an association, not a pure trait effect. A rusher who is unblocked or wins early accelerates freely, and one who meets a double team slows at once. We cannot observe blocking schemes, because blockers are not tracked.
+The model explains little of any single snap (pseudo-R² 0.03). One rush is mostly noise, and the advantage builds up over hundreds of rushes.
+
+It is also an association, not a pure trait effect. A rusher who is unblocked or wins early accelerates freely, and one who meets a double team slows at once. We cannot observe blocking schemes, because blockers are not tracked.
 
 ![Figure 5](figures/f5_pressure_vs_first_step.png)
 
@@ -90,13 +96,15 @@ This is an association, not a pure trait effect. A rusher who is unblocked or wi
 
 Beyond draft slot and the 10-yard split, the Combine first step does not predict pressure rate. Rates are shrunk toward each role's own mean (10.5% edge, 6.5% interior). Out of sample, it lowers accuracy from 44% to 42%.
 
+*Post-hoc*, a mixed logistic model on every rush points the same way and stays small: OR 0.93 per SD slower Combine first step. Its variational interval excludes 1 (0.89 to 0.98), but variational Bayes understates uncertainty. Cluster-robust and GEE versions give the same size with intervals including 1 (p ≈ 0.2). Any effect is small, and we cannot confirm it.
+
 One exploratory pattern deserves follow-up (Figure 6). Among mostly-interior linemen, a slower Combine start goes with less pressure (r = −0.49, n = 34):
 
 - **Weight and nose tackles do not explain it:** after both, r = −0.48 (CI −0.70 to −0.10).
 - **Not driven by one player:** dropping any single player leaves r between −0.53 and −0.40.
 - ***Post-hoc*, with the full H4 controls** (draft slot, 10-yard split, edge share): the size holds (r = −0.46), but the interval now reaches zero (−0.71 to +0.04; p = 0.17).
 
-It is also one of about 20 checks. The same Combine measure does not predict these players' NFL first step either. It may capture explosiveness into contact, or it may be chance. The 2026 draft class can test it.
+It is also one of about 20 checks. The same Combine measure does not predict these players' NFL first step either. Explosiveness into contact would point to momentum (weight × early speed), but momentum does not track interior pressure (r = +0.14). The pattern may be chance; the 2026 draft class can test it.
 
 ![Figure 6](figures/f6_pressure_by_role.png)
 
@@ -131,7 +139,7 @@ It is also one of about 20 checks. The same Combine measure does not predict the
 - Code:
   - measurement: `common.py`, `game_starts.py`, `combine_starts.py`
   - planned tests: `tests.py`
-  - post-hoc review checks: `review_round2.py`, `review_round3.py`, `cv_h4.py`
+  - post-hoc review checks: `review_round2.py`, `review_round3.py`, `review_round4.py`, `cv_h4.py`
   - figures: `figures.py`
 - Executed review notebook: `review_notebook.ipynb`
 - Receiver comparison: `../wr_breaks/`

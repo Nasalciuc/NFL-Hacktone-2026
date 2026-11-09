@@ -35,7 +35,7 @@ md("""
 Notebook-ul arată tot ce am făcut până acum, astfel încât **să poată fi citit și criticat fără acces la date**. A fost rulat pe datele Kaggle, iar toate rezultatele (tabele și grafice) sunt salvate în el.
 
 - **Ce conține:** codul măsurătorilor, validările, stabilitatea, testele H1–H4 planificate înainte de rulare, toate verificările de robustețe, coeficienții modelelor, răspunsurile la cele două runde de recenzie și lista deciziilor care pot fi contestate.
-- **Ce nu conține:** rânduri din datele competiției sau valori pe jucător. Regulile Kaggle nu permit redistribuirea datelor, așa că toate rezultatele sunt agregate.
+- **Ce nu conține:** rânduri din datele competiției. Regulile Kaggle nu permit redistribuirea datelor. Tabelele sunt agregate. Graficele F3 și F6 au câte un punct pe jucător: sunt valori derivate, fără nume sau ID-uri, la fel ca în lucrarea finală.
 - **Cum se refac:** cu datele descărcate, `bash run_all.sh`, apoi `python dl_first_step/make_review_notebook.py`.
 
 **Conținut**
@@ -47,8 +47,9 @@ Notebook-ul arată tot ce am făcut până acum, astfel încât **să poată fi 
 6. H3: primul pas din meci și presiunea
 7. H4: Combine → presiune
 8. A treia rundă de recenzie
-9. Deciziile care pot fi contestate
-10. Întrebări deschise, unde ar ajuta propunerile
+9. A patra rundă de recenzie
+10. Deciziile care pot fi contestate
+11. Răspunsurile la întrebările deschise și ce rămâne
 """)
 
 code("""
@@ -85,6 +86,7 @@ plays = pl.read_parquet(os.path.join(OUT, "game_rush_plays.parquet"))
 creps = pl.read_parquet(os.path.join(OUT, "combine_reps.parquet"))
 cdl = pl.read_parquet(os.path.join(OUT, "combine_dl_players.parquet"))
 rev3 = json.load(open(os.path.join(OUT, "review_round3.json")))
+rev4 = json.load(open(os.path.join(OUT, "review_round4.json")))
 elig = common.eligible_plays(plays)   # the same filter every script uses
 print(f"faze eligibile: {elig.height:,}; jucători: {elig['nfl_id'].n_unique()}")
 """)
@@ -105,6 +107,16 @@ steps = [
     ("jucătorul chiar a atacat (nu s-a retras în acoperire)", elig),
 ]
 pd.DataFrame([{"filtru": s, "faze": d.height, "jucători": d["nfl_id"].n_unique()} for s, d in steps])
+""")
+
+md("""
+**Filtrul de penalizări nu scoate nicio fază, și asta e de așteptat.** Fazele anulate de penalizări nu au statistici de pass rush în `player_play`. Din rândurile DL anulate, aproape niciunul nu are `sack` completat, deci definiția fazei de pass rush le exclude deja. Filtrul rămâne ca măsură de siguranță.
+""")
+
+code("""
+pd.DataFrame([rev4["penalty"]]).rename(columns={
+    "dl_rows_nullified": "rânduri DL anulate", "dl_rows_total": "rânduri DL în total",
+    "nullified_with_sack_field": "anulate, cu sack completat", "rush_rows_in_sample_nullified": "anulate în eșantion"})
 """)
 
 md("Pe sezoane și pe aliniere: volumul, presiunea și valorile tipice ale celor două măsuri principale.")
@@ -429,7 +441,68 @@ pd.DataFrame(rows)
 """)
 
 md("""
-## 9. Deciziile care pot fi contestate
+## 9. A patra rundă de recenzie (post-hoc)
+
+Codul e în `review_round4.py`. **H3 în unități de fotbal:** cât înseamnă 1 SD în secunde și cât valorează 0,1 s în puncte procentuale de presiune, plus pseudo R² al modelului.
+""")
+
+code("""
+u = rev4["h3_units"]
+pd.DataFrame([
+    {"mărime": "1 SD de fază, edge (s)", "valoare": u["sd_seconds"]["EDGE"]},
+    {"mărime": "1 SD de fază, interior (s)", "valoare": u["sd_seconds"]["INTERIOR_LINE"]},
+    {"mărime": "presiune, fază cu 1 SD mai rapidă (%)", "valoare": 100 * u["rate_play_1sd_faster"]},
+    {"mărime": "presiune, fază cu 1 SD mai lentă (%)", "valoare": 100 * u["rate_play_1sd_slower"]},
+    {"mărime": "primul pas cu 0,1 s mai rapid pe fiecare fază (puncte)", "valoare": u["pp_if_every_play_0p1s_faster"]},
+    {"mărime": "reacția cu 0,1 s mai rapidă pe fiecare fază (puncte)", "valoare": u["pp_if_reaction_0p1s_faster"]},
+    {"mărime": "același jucător, 0,1 s față de propria medie, edge (puncte)", "valoare": u["within_player_pp_per_0p1s_faster_at_mean_rate"]["EDGE"]},
+    {"mărime": "același jucător, 0,1 s față de propria medie, interior (puncte)", "valoare": u["within_player_pp_per_0p1s_faster_at_mean_rate"]["INTERIOR_LINE"]},
+    {"mărime": "pseudo R² McFadden", "valoare": u["pseudo_r2_mcfadden"]}])
+""")
+
+md("**H3 fără pasele rapide.** Excludem pasele aruncate în sub 2,5 s, unde rusher-ul nu are timp să ajungă la quarterback. E o aproximare grosieră pentru că nu avem blocatorii.")
+
+code("""
+q = rev4["h3_without_quick_passes"]
+pd.DataFrame([{"faze excluse (%)": 100 * q["quick_share"], "presiune pe ele (%)": 100 * q["pressure_rate_quick"],
+               "presiune pe restul (%)": 100 * q["pressure_rate_kept"], "OR pe SD mai lent": q["or_per_sd_slower"],
+               "IC": ci(q["or_ci"]), "p": q["p"], "1 SD mai rapid (%)": 100 * q["rate_1sd_faster"],
+               "1 SD mai lent (%)": 100 * q["rate_1sd_slower"]}])
+""")
+
+md("""
+**Modele ierarhice, ca verificare de sensibilitate.**
+- **H1:** model mixt liniar pe faze, cu intercept aleator pe jucător.
+- **H4:** model mixt logistic, rezolvat cu metoda variațională. Alături sunt două modele robuste la gruparea pe jucător.
+
+Metoda variațională subestimează de obicei incertitudinea, de aceea sunt raportate toate trei.
+""")
+
+code("""
+rows = []
+for k, v in rev4["mixed_models"].items():
+    if "coef_s_per_sd" in v:
+        rows.append({"model": "H1: " + k, "efect": f"{v['coef_s_per_sd']:+.4f} s pe SD", "IC 95%": ci(v["ci"], 4), "p": v.get("p")})
+    else:
+        rows.append({"model": k, "efect": f"OR {v['or_per_sd']:.3f} pe SD mai lent", "IC 95%": ci(v["or_ci"]), "p": v.get("p")})
+pd.DataFrame(rows)
+""")
+
+md("**Exploratoriu, propus de coleg: impulsul la Combine** (greutate × viteza medie pe primii 1,5 sau 2,5 yd), ca aproximare pentru „explozia în contact”.")
+
+code("""
+rows = []
+for role, v in rev4["momentum_exploratory"].items():
+    for mcol in ("momentum_15", "momentum_25"):
+        o = v[mcol]
+        rows.append({"rol": role, "măsura": mcol, "n": v["n"], "r cu presiunea": o["r"], "IC": ci(o["ci"]), "p": o["p"],
+                     "corelația cu greutatea": o["r_with_weight"], "r după controalele H4": o["partial_h4_controls"]["r"],
+                     "IC după controale": ci(o["partial_h4_controls"]["ci"])})
+pd.DataFrame(rows)
+""")
+
+md("""
+## 10. Deciziile care pot fi contestate
 
 Fiecare rând e o alegere care schimbă rezultatele. Pentru fiecare e notat unde se modifică în cod și ce alternativă merită discutată.
 
@@ -442,21 +515,25 @@ Fiecare rând e o alegere care schimbă rezultatele. Pentru fiecare e notat unde
 | Presiunea | `time_to_pressure` completat | `game_starts.py` | definiția NGS de presiune | doar sack; presiune rapidă |
 | Prag de faze pe jucător | 50 | `tests.py` (`MIN_RUSHES`) | echilibru între stabilitate și eșantion | 30 și 100 au fost testate |
 | Controalele din H3 | aliniere, down, distanță, formație, scor, reacție | `tests.py` (`logit_h3`) | context disponibil înainte de snap | sfertul, ceasul, adversarul |
-| Modelul H4 | regresie liniară, HC3, log(locul la draft) | `tests.py` | simplu și transparent | model ierarhic pe toate fazele |
+| Modelul H4 | regresie liniară, HC3, log(locul la draft) | `tests.py` | simplu și transparent | model ierarhic pe toate fazele (testat în runda a patra) |
 | Shrinkage | beta-binomial, spre media rolului | `common.fit_beta_binomial` | rate stabile pentru jucători cu puține faze | spre media globală (a dat același rezultat) |
 | Linia de scrimmage | din `yardline_number`, ±0,5 yd | `game_starts.py` | nu există poziția mingii | nu e folosită în măsurile principale |
 | Rolul unui jucător | edge dacă cel puțin 50% din faze sunt pe edge | `figures.py`, `review_round2.py` | rolul dominant | proporția ca variabilă continuă (folosită în H1 și H4) |
 """)
 
 md("""
-## 10. Întrebări deschise, unde ar ajuta propunerile
+## 11. Răspunsurile la întrebările deschise și ce rămâne
 
-1. **Semnalul de la interior.** Rezistă controlului pentru greutate și NT, dar nu trece de pragul Bonferroni. Cu specificația H4 completă, intervalul ajunge la zero (r = −0,46, p = 0,17). Primul pas de la Combine nu prezice nici primul pas din NFL al acestor jucători. Ce ar putea măsura, de fapt? De exemplu, explozia în contact, nu viteza în spațiu liber. Ce măsură din exercițiile DL de la Combine ar putea testa asta? Atenție: aceste exerciții au o singură repetare pe jucător.
-2. **H3 e o asociere.** Nu avem blocatorii în tracking, deci double team-urile și stunt-urile nu se pot controla. Există o variabilă din `player_play` care ar putea servi ca aproximare?
-3. **Modelarea.** Ar fi mai bun un model ierarhic, de exemplu un logistic mixt pe toate fazele cu primul pas de la Combine ca predictor la nivel de jucător, în locul analizei în doi pași pentru H1 și H4?
-4. **Povestea.** Lucrarea ar trebui să înceapă cu partea utilă pentru echipe (reacția și primul pas, măsurate din meciuri) și să pună rezultatul negativ de la Combine pe locul doi?
-5. **Bugetul de figuri.** Sunt 6 figuri și un tabel, sub limita de 10. Ce ar merita adăugat sau scos?
-6. **Claritatea.** Ce nu e clar în `WRITEUP_DRAFT.md` pentru un analist al unei echipe NFL?
+| Întrebare | Răspunsul colegului | Ce am făcut | Ce rămâne |
+|---|---|---|---|
+| Semnalul de la interior | Testează impulsul la 40 de yarzi și specificația H4 doar pe interior; confirmarea poate veni doar din clasa 2026 | Specificația H4: r = −0,46, dar intervalul atinge zero (p = 0,17). Impulsul nu explică semnalul (r = +0,14) | Rămâne o ipoteză pentru clasa 2026 |
+| Aproximarea blocajului | Verifică legăturile dintre blocatori și jucătorii blocați; altfel formații, pase rapide, presiunea neblocată | `player_play` nu are astfel de legături. Fără pasele rapide, H3 rămâne (OR 0,77). Formația e deja variabilă de control, iar presiunea neblocată a fost testată | Formularea rămâne cea de asociere |
+| Modele ierarhice | Ca verificare de sensibilitate pentru H1 și H4 | H1: același rezultat nul. H4: aceeași mărime mică (OR 0,93–0,95); intervalul exclude 1 doar cu metoda variațională | Nimic de schimbat în concluzii |
+| Ordinea poveștii | Combine-ul rămâne întrebarea; deschide cu F1, cele două părți ale get-off-ului | F1 e prima figură, iar introducerea pornește de la cele două părți | Poate fi șlefuită la redactarea finală |
+| Figura pentru reacție | Adaugă una | F5 are acum un panou pentru reacție | Totalul e 6 figuri și 2 tabele, sub limita de 10 |
+| Claritatea | „1 SD” în secunde, OR în puncte procentuale | Peste tot: 0,17 s pe edge, 0,28 s la interior; +1,4 puncte la 0,1 s de prim pas, +1,1 la 0,1 s de reacție | — |
+
+**Încă de făcut pentru predare:** notebook-ul public de Kaggle, cu căile `/kaggle/input/...`. Pornește de la acest notebook, iar colegul s-a oferit să-l pregătească.
 """)
 
 nb = new_notebook(cells=cells, metadata={"kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"},

@@ -23,6 +23,7 @@ echo "== DL: planned tests H1-H4 (as first written, then corrected definition)"
 echo "== DL: post-hoc checks from the review rounds"
 "$PY" dl_first_step/review_round2.py "$DATA" "$DL" | tee "$DL/review_round2_log.txt"
 "$PY" dl_first_step/review_round3.py "$DATA" "$DL" | tee "$DL/review_round3_log.txt"
+"$PY" dl_first_step/review_round4.py "$DATA" "$DL" | tee "$DL/review_round4_log.txt"
 
 echo "== WR: break measures and their stability (no outcome tests)"
 "$PY" wr_breaks/wr_measures.py "$DATA" "$WR" 0.7 | tee "$WR/wr_measures_log_dip70.txt"

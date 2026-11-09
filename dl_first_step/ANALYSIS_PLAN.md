@@ -113,6 +113,20 @@ Cod în `review_round3.py`, jurnal în `outputs/review_round3_log.txt`.
 | Formularea „pre-registered” | Înlocuită cu „planned before testing”, plus nota despre istoricul git de la începutul planului |
 | Cod duplicat, `-W ignore`, eșecuri bootstrap, convergența prior-ului | Totul e acum în `common.py`. Avertismentele apar în jurnale, fără căi locale; eșecurile bootstrap sunt numărate; prior-ul se oprește dacă nu converge. Rezultatele vechi rămân identice: diferențele sunt sub 3·10⁻⁶ |
 
+## A patra rundă de recenzie (post-hoc, 9 noiembrie 2026)
+Cod în `review_round4.py`, jurnal în `outputs/review_round4_log.txt`.
+
+| Cerere | Rezultat |
+|---|---|
+| Filtrul „faza nu e anulată” nu scoate nimic | Corect, și e intenționat. Din cele 3.269 de rânduri DL anulate de penalizări, doar unul are câmpul `sack` completat, deci definiția fazei de pass rush le exclude deja. Filtrul rămâne ca siguranță |
+| „1 SD” în secunde, OR în puncte procentuale | 1 SD de fază = 0,17 s pe edge, 0,28 s la interior. Un prim pas cu 0,1 s mai rapid pe fiecare fază: +1,4 puncte de presiune. O reacție cu 0,1 s mai rapidă: +1,1. În cadrul aceluiași jucător, 0,1 s față de propria medie: +1,4 pe edge, +0,9 la interior |
+| Pseudo R² pentru H3 | McFadden 0,029: o singură fază e explicată foarte puțin; e spus în lucrare și în F5 |
+| Proxy pentru blocaj | `player_play` nu leagă blocatorii de jucătorii blocați. Am exclus pasele aruncate în sub 2,5 s (36% din faze, cu 2,4% presiune): H3 rămâne, OR 0,77 [0,68; 0,87]. Formația e deja variabilă de control, iar fazele cu presiune neblocată au fost testate în runda întâi |
+| Modele ierarhice (verificare de sensibilitate) | H1, model mixt liniar pe faze: −0,0004 s pe SD [−0,010; +0,009], la fel ca analiza în doi pași. H4, model mixt logistic: OR 0,93 [0,89; 0,98] pe SD, dar metoda variațională subestimează incertitudinea. Logitul cu erori grupate (0,94 [0,86; 1,03]) și GEE (0,95 [0,87; 1,03]) dau aceeași mărime, cu p ≈ 0,2 |
+| Impulsul la Combine (greutate × viteza pe primii yarzi), la interior | r = +0,14 [−0,25; +0,45]; după controalele H4, +0,36 [−0,11; +0,65]. Nu explică semnalul, iar ipoteza „masă în mișcare” nu se confirmă. Explorator |
+| Panou pentru reacție | F5 are acum două panouri: primul pas și reacția |
+| Note tehnice | Modelul mixt liniar folosește optimizatorul Powell: L-BFGS ajungea la o varianță pe jucător zero. Rămâne un avertisment de „limită”, pentru că varianța pe jucător e mică (0,03 s față de 0,23 s), dar estimarea e aceeași cu orice optimizator. Modelul mixt logistic rulează pe date sortate, cu L-BFGS-B, și converge |
+
 ## Ce nu putem afirma
 - **Eșantion mic:** 62 de jucători; doar corelațiile de peste circa 0,35 pot fi demonstrate sigur.
 - **Selecție:** apar doar jucătorii care au jucat suficient; cei care n-au prins echipa lipsesc din H1, H3 și H4.
