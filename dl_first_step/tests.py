@@ -296,14 +296,14 @@ with open(os.path.join(OUT, f"tests_results_{TAG}.json"), "w") as f:
 fig, ax = plt.subplots(1, 2, figsize=(11, 4.6))
 for a, (yc, title) in zip(ax, (("g_burst15", "H1: in-game burst_15 (s)"), ("eb_rate", "H4: pressure rate (shrunk)"))):
     x, yv = df["forty_burst15_mean"].to_numpy(), df[yc].to_numpy()
-    colors = np.where(df["edge_share"].to_numpy() >= 0.5, "#c0392b", "#2c7fb8")
+    colors = np.where(df["edge_share"].to_numpy() >= 0.5, "#2a78d6", "#eb6834")  # same palette as the writeup figures
     a.scatter(x, yv, c=colors, s=26, alpha=0.8)
     k, c0 = np.polyfit(x, yv, 1)
     xx = np.linspace(x.min(), x.max(), 50)
     a.plot(xx, k * xx + c0, color="black", lw=1)
     a.set_xlabel("Combine 40-yard burst_15 (s, lower = faster)")
     a.set_title(f"{title}   r = {np.corrcoef(x, yv)[0, 1]:+.2f}")
-ax[0].text(0.02, 0.97, "red = mostly EDGE, blue = mostly interior", transform=ax[0].transAxes, va="top", fontsize=8)
+ax[0].text(0.02, 0.97, "blue = mostly edge, orange = mostly interior", transform=ax[0].transAxes, va="top", fontsize=8)
 fig.tight_layout()
 fig.savefig(os.path.join(OUT, f"check_h1_h4_{TAG}.png"), dpi=110)
 print(f"\nsaved tests_results_{TAG}.json and check_h1_h4_{TAG}.png")

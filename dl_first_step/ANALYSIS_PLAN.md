@@ -80,6 +80,23 @@ Testele principale sunt H1, H3 și H4, cu corecția Holm la α = 0,05. H2 e desc
 
 Primele rezultate H1, H2 și H4 nu depind de regresia logistică și au fost calculate exact ca în plan. Ele sunt identice în varianta cu definiția inițială.
 
+## A doua rundă de recenzie (post-hoc, 9 noiembrie 2026)
+Toate verificările de aici au fost cerute de un coleg după ce rezultatele erau cunoscute. Ele nu schimbă testele H1–H4 și sunt marcate în lucrare ca *post-hoc*. Codul e în `review_round2.py`, jurnalul în `outputs/review_round2_log.txt`.
+
+| Cerere | Rezultat |
+|---|---|
+| Fereastră mai scurtă, înainte de contact (0,5 yarzi; accelerația în primele 0,2 s) | Nicio fereastră nu arată transfer. Cel mai aproape: accelerația timpurie la interior, r = +0,28 [−0,03; +0,55] |
+| Viteza de circa 0,3 yd/s la snap | Mișcarea începe cu circa 0,2 s înainte de cadrul snap-ului. Viteza calculată din poziție arată aceeași creștere, deci nu e un efect de netezire |
+| Mediană cu bandă interquartilă în F1 | Făcut |
+| Rândul „Rol + greutate + timpul pe 10 yarzi” și intervale pentru leave-one-out | Timpul pe 10 yarzi scade acuratețea cu −0,017 [−0,034; −0,005]; corelația lui cu greutatea e 0,84 |
+| H3 între jucători și în cadrul aceluiași jucător | Cu efecte fixe de jucător: OR 0,72 [0,65; 0,80]. Și pe fereastra de 0,5 yarzi: OR 0,86 [0,80; 0,91] |
+| Interiorul controlat pentru greutate și NT | r parțial −0,48 [−0,70; −0,10]; eliminând pe rând câte un jucător, între −0,53 și −0,40; Spearman −0,46; p = 0,003, peste pragul Bonferroni de 0,0025 |
+| Shrinkage spre media rolului | Mediile: edge 10,5%, interior 6,5%. Rezultatele rămân aceleași |
+| Stabilitatea pe rol și pe o singură încercare | Un snap NFL: 0,01. O încercare la Combine: 0,60. Sezonul, ajustat pe rol: 0,80 (era 0,94 cu rolurile amestecate) |
+| Corecția pentru atenuare | Plafonul corelației observabile e 0,77; estimarea corectată e +0,05 [−0,24; +0,38] |
+| Jucătorii lipsă din eșantion (17) | 16 au sărit peste 40 de yarzi. Au fost aleși mai devreme la draft (mediana 66 față de 124) și joacă mai mult pe edge; diferențele nu sunt clare statistic |
+| Ordinea figurilor și culorile | Figurile urmează acum H1–H4. Graficele de control folosesc aceleași culori ca lucrarea |
+
 ## Ce nu putem afirma
 - **Eșantion mic:** 62 de jucători; doar corelațiile de peste circa 0,35 pot fi demonstrate sigur.
 - **Selecție:** apar doar jucătorii care au jucat suficient; cei care n-au prins echipa lipsesc din H1, H3 și H4.

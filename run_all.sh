@@ -19,12 +19,15 @@ echo "== DL: pre-registered tests H1-H4 (as first written, then corrected defini
 "$PY" -W ignore dl_first_step/tests.py "$DATA" "$DL" | tee "$DL/tests_log.txt"
 "$PY" dl_first_step/cv_h4.py "$DATA" "$DL" | tee "$DL/cv_h4_log.txt"
 
+echo "== DL: post-hoc checks from the second review round"
+"$PY" -W ignore dl_first_step/review_round2.py "$DATA" "$DL" | tee "$DL/review_round2_log.txt"
+
 echo "== WR: break measures and their stability (no outcome tests)"
 "$PY" -W ignore wr_breaks/wr_measures.py "$DATA" "$WR" 0.7 | tee "$WR/wr_measures_log_dip70.txt"
 "$PY" -W ignore wr_breaks/wr_measures.py "$DATA" "$WR" 0.8 | tee "$WR/wr_measures_log_dip80.txt"
 
 echo "== figures for the writeup"
-"$PY" -W ignore dl_first_step/figures.py "$DATA" "$DL" "$WR"
+"$PY" -W ignore dl_first_step/figures.py "$DATA" "$DL"
 
 echo "== copy every chart into grafice/"
 mkdir -p grafice

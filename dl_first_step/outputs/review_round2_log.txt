@@ -1,0 +1,82 @@
+== reading tracking for eligible rushes
+== speed around the snap: reported speed vs speed from position change (median, yd/s)
+shape: (9, 4)
+┌──────┬──────────┬───────────────────┬────────────────┐
+│ t    ┆ s_median ┆ step_speed_median ┆ share_s_over_1 │
+│ ---  ┆ ---      ┆ ---               ┆ ---            │
+│ f64  ┆ f64      ┆ f64               ┆ f64            │
+╞══════╪══════════╪═══════════════════╪════════════════╡
+│ -0.5 ┆ 0.02     ┆ 0.1               ┆ 0.004          │
+│ -0.4 ┆ 0.02     ┆ 0.1               ┆ 0.002          │
+│ -0.3 ┆ 0.02     ┆ 0.1               ┆ 0.001          │
+│ -0.2 ┆ 0.04     ┆ 0.1               ┆ 0.001          │
+│ -0.1 ┆ 0.09     ┆ 0.2               ┆ 0.0            │
+│ 0.0  ┆ 0.23     ┆ 0.3               ┆ 0.0            │
+│ 0.1  ┆ 0.45     ┆ 0.5               ┆ 0.083          │
+│ 0.2  ┆ 0.75     ┆ 0.728             ┆ 0.288          │
+│ 0.3  ┆ 1.1      ┆ 1.077             ┆ 0.579          │
+└──────┴──────────┴───────────────────┴────────────────┘
+
+== shrinkage targets (prior means of pressure rate): {'global_mean': 0.0831, 'EDGE': 0.1046, 'INTERIOR_LINE': 0.0647}
+main sample players: 62
+
+== sample: 98 DL with rushes -> 79 with >= 50 -> 62 with a clean Combine 40
+{'dl_with_rushes': 98, 'ge50': 79, 'main': 62, 'no_clean_forty': 17, 'skipped_forty_officially': 16}
+   pick            main median  124.000   missing median   66.000   Mann-Whitney p 0.108
+   eb_global       main median    0.080   missing median    0.078   Mann-Whitney p 1.000
+   g_burst15       main median    0.715   missing median    0.677   Mann-Whitney p 0.374
+   combine_weight  main median  282.500   missing median  264.000   Mann-Whitney p 0.438
+   edge_share      main median    0.193   missing median    0.883   Mann-Whitney p 0.228
+   rushes          main median  191.000   missing median  252.000   Mann-Whitney p 0.659
+
+== reliability
+   burst_15  nfl_season_mixed_roles 0.94  nfl_season_role_adjusted 0.80  nfl_season_EDGE 0.80  n_EDGE 41  nfl_season_INTERIOR_LINE 0.85  n_INTERIOR_LINE 39  nfl_single_play_role_adjusted 0.01  combine_single_attempt 0.60  combine_single_attempt_icc 0.63  combine_players_two_attempts 73  combine_mean_of_attempts 0.75
+   burst_05  nfl_season_mixed_roles 0.95  nfl_season_role_adjusted 0.92  nfl_season_EDGE 0.88  n_EDGE 41  nfl_season_INTERIOR_LINE 0.90  n_INTERIOR_LINE 39  nfl_single_play_role_adjusted 0.06  combine_single_attempt 0.50  combine_single_attempt_icc 0.51  combine_players_two_attempts 73  combine_mean_of_attempts 0.66
+   acc_02    nfl_season_mixed_roles 0.97  nfl_season_role_adjusted 0.87  nfl_season_EDGE 0.91  n_EDGE 41  nfl_season_INTERIOR_LINE 0.92  n_INTERIOR_LINE 39  nfl_single_play_role_adjusted 0.04  combine_single_attempt 0.61  combine_single_attempt_icc 0.62  combine_players_two_attempts 73  combine_mean_of_attempts 0.76
+   t_react   nfl_season_mixed_roles 0.86  nfl_season_role_adjusted 0.86  nfl_season_EDGE 0.93  n_EDGE 41  nfl_season_INTERIOR_LINE 0.79  n_INTERIOR_LINE 39  nfl_single_play_role_adjusted 0.05
+
+== transfer Combine -> NFL by window (main sample)
+   0.5 yd                 all r +0.024 [-0.179, +0.252] n 62 p 0.8521 | after weight+role r -0.148 [-0.371, +0.098] n 62
+                          edge r -0.221 [-0.527, +0.096] n 28 p 0.2587 | interior r -0.034 [-0.356, +0.331] n 34 p 0.8472
+   first 0.2 s (accel.)   all r +0.201 [-0.056, +0.434] n 62 p 0.1175 | after weight+role r +0.122 [-0.161, +0.398] n 62
+                          edge r -0.039 [-0.461, +0.469] n 28 p 0.8429 | interior r +0.277 [-0.030, +0.547] n 34 p 0.1127
+   1.5 yd                 all r +0.202 [-0.018, +0.453] n 62 p 0.1146 | after weight+role r +0.040 [-0.182, +0.297] n 62
+                          edge r +0.028 [-0.296, +0.373] n 28 p 0.8859 | interior r +0.106 [-0.234, +0.501] n 34 p 0.5521
+
+== disattenuation (H1): {'ceiling_all': 0.841, 'r_all_corrected': np.float64(0.241), 'ci_all_corrected': [np.float64(-0.022), np.float64(0.539)], 'ceiling_partial': 0.774, 'r_partial_corrected': np.float64(0.051), 'ci_partial_corrected': [np.float64(-0.236), np.float64(0.384)]}
+
+== H3 decomposed (play level, situation controls, SE clustered by player)
+  sample main_62
+   burst_15  within player: OR 0.749 per SD [0.665, 0.843] p 1.8e-06 (within-player SD = 0.99) | between players: OR 0.406 [0.195, 0.846] p 0.016 | player fixed effects: OR 0.744 [0.661, 0.838] p 1e-06  (20,012 plays, 62 players)
+   burst_05  within player: OR 0.875 per SD [0.811, 0.944] p 0.00059 (within-player SD = 0.97) | between players: OR 0.870 [0.617, 1.228] p 0.43 | player fixed effects: OR 0.858 [0.794, 0.927] p 0.00012  (20,020 plays, 62 players)
+   acc_02    within player: OR 1.116 per SD [1.057, 1.179] p 6.9e-05 (within-player SD = 0.98) | between players: OR 1.838 [1.341, 2.517] p 0.00015 | player fixed effects: OR 1.120 [1.061, 1.183] p 4.4e-05  (20,020 plays, 62 players)
+  sample all_98
+   burst_15  within player: OR 0.726 per SD [0.654, 0.807] p 2.7e-09 (within-player SD = 0.99) | between players: OR 0.391 [0.195, 0.782] p 0.0079 | player fixed effects: OR 0.718 [0.645, 0.799] p 1.3e-09  (26,120 plays, 98 players)
+   burst_05  within player: OR 0.872 per SD [0.818, 0.930] p 2.8e-05 (within-player SD = 0.97) | between players: OR 0.893 [0.665, 1.200] p 0.45 | player fixed effects: OR 0.855 [0.801, 0.913] p 2.9e-06  (26,129 plays, 98 players)
+   acc_02    within player: OR 1.143 per SD [1.085, 1.205] p 4.6e-07 (within-player SD = 0.98) | between players: OR 1.949 [1.422, 2.673] p 3.4e-05 | player fixed effects: OR 1.146 [1.088, 1.207] p 2.3e-07  (26,129 plays, 98 players)
+
+== Combine first step vs pressure, by role (exploratory)
+   INTERIOR_LINE: positions {'DE': 6, 'DT': 24, 'NT': 4}
+      shrunk to global mean r -0.491 [-0.707, -0.150] n 34 p 0.0032 | to group mean r -0.489 [-0.693, -0.193] n 34 p 0.0033
+      Spearman -0.461 (p 0.006); jackknife r range -0.535 to -0.402
+      Combine first step vs weight r +0.139; partial r after weight r -0.473 [-0.697, -0.114] n 34; after weight + NT r -0.479 [-0.703, -0.097] n 34
+      OLS (standardized) beta -0.469 [-0.764, -0.174] p 0.0018 with ['combine_weight', 'nt']
+   EDGE: positions {'DE': 17, 'OLB': 11}
+      shrunk to global mean r +0.140 [-0.157, +0.477] n 28 p 0.4776 | to group mean r +0.158 [-0.140, +0.504] n 28 p 0.4221
+      Spearman +0.228 (p 0.244); jackknife r range +0.043 to +0.264
+      Combine first step vs weight r +0.270; partial r after weight r +0.225 [-0.092, +0.538] n 28
+      OLS (standardized) beta +0.229 [-0.161, +0.618] p 0.2496 with ['combine_weight']
+
+== leave-one-out R2 for the NFL first step, with bootstrap 95% intervals over players
+   Role (share of snaps on the edge)        +0.678 [+0.561, +0.759]
+   Weight                                   +0.588 [+0.413, +0.705]
+   Official 10-yard split (stopwatch)       +0.423 [+0.155, +0.601]
+   Combine first step (tracking)            -0.034 [-0.213, +0.061]
+   Role + weight                            +0.690 [+0.563, +0.777]
+   Role + weight + 10-yard split            +0.672 [+0.539, +0.767]
+   Role + weight + Combine first step       +0.680 [+0.550, +0.768]
+   difference: Role + weight + Combine first step vs Role + weight: -0.010 [-0.019, -0.003]
+   difference: Role + weight + 10-yard split vs Role + weight: -0.017 [-0.034, -0.005]
+   official 10-yd split vs weight, r = 0.844
+
+saved review_round2.json

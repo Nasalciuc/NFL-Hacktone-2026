@@ -1,5 +1,3 @@
-C:\Users\user\Downloads\nfl-big-data-bowl-2027\dl_first_step\tests.py:283: DeprecationWarning: `qcut` is deprecated; use `bin_quantiles` or `bin_ranks` instead
-  qs = df.with_columns(pl.col("forty_burst15_mean").qcut(4, labels=["Q1 fastest", "Q2", "Q3", "Q4 slowest"]).alias("q"))
 definition: as_written; eligible plays 27,389, players 98
 main sample: 62 players; beta-binomial prior a=8.19 b=94.33 (prior mean 0.080); by class [(2023, 25), (2024, 23), (2025, 14)]
 
