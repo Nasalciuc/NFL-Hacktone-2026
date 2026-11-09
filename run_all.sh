@@ -32,4 +32,7 @@ echo "== figures for the writeup"
 echo "== copy every chart into grafice/"
 mkdir -p grafice
 cp dl_first_step/figures/*.png "$DL"/check_h1_h4_*.png grafice/
+
+echo "== review notebook (executed, readable without the data)"
+"$PY" dl_first_step/make_review_notebook.py
 echo "done"

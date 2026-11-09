@@ -4,6 +4,8 @@ Analiza pentru [NFL Big Data Bowl 2027](https://www.kaggle.com/competitions/nfl-
 
 **Întrebarea:** primul pas al unui jucător de linie defensivă (DL), măsurat cu senzorii de la Combine, se regăsește în primul pas din meciurile NFL și în presiunea pe quarterback?
 
+**Pentru revizuire fără date:** deschide [`dl_first_step/review_notebook.ipynb`](dl_first_step/review_notebook.ipynb). E rulat pe datele Kaggle și păstrează toate tabelele și graficele. Conține codul măsurătorilor, validările, stabilitatea, testele H1–H4 cu toate verificările de robustețe, coeficienții modelelor și lista deciziilor care pot fi contestate. Nu conține date brute.
+
 **Răspunsul pe scurt:** get-off-ul din NFL are două părți: reacția la snap și accelerarea. Combine-ul nu are snap, deci măsoară doar accelerarea. Nici aceea nu se transmite în meci după ce ținem cont de greutate și de aliniere. În schimb, primul pas din meci e legat puternic de presiune.
 
 ## Rezultate (ipoteze scrise înainte de teste)
@@ -32,6 +34,8 @@ dl_first_step/           analiza principală
   tests.py               testele H1–H4 și verificările de robustețe
   cv_h4.py               validarea leave-one-out pentru presiune (verificare descriptivă)
   review_round2.py       verificările post-hoc cerute în a doua rundă de recenzie
+  review_notebook.ipynb  notebook-ul de revizuire, rulat, cu toate rezultatele (se citește fără date)
+  make_review_notebook.py  construiește și rulează notebook-ul de revizuire
   figures.py             cele 6 grafice din lucrare
   figures/               graficele finale
   outputs/               jurnalele rulărilor și rezultatele JSON
