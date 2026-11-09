@@ -1,0 +1,66 @@
+C:\Users\user\Downloads\nfl-big-data-bowl-2027\dl_first_step\tests.py:283: DeprecationWarning: `qcut` is deprecated; use `bin_quantiles` or `bin_ranks` instead
+  qs = df.with_columns(pl.col("forty_burst15_mean").qcut(4, labels=["Q1 fastest", "Q2", "Q3", "Q4 slowest"]).alias("q"))
+definition: as_written; eligible plays 27,389, players 98
+main sample: 62 players; beta-binomial prior a=8.19 b=94.33 (prior mean 0.080); by class [(2023, 25), (2024, 23), (2025, 14)]
+
+=== H1 transfer: Combine burst_15 vs in-game burst_15
+   r +0.209  95% CI [-0.009, +0.452]  p 0.1034  n 62
+   controlled for weight and EDGE share: standardized beta +0.028 [-0.121, +0.177] p 0.7106
+   full model (standardized): {'const': 0.0, 'forty_burst15_mean': 0.028, 'combine_weight': 0.308, 'edge_share': -0.548}
+
+=== H2 specificity (descriptive)
+   Combine burst_15 vs in-game reaction to snap: r +0.140  95% CI [-0.098, +0.374]  p 0.2785  n 62
+   official 10-yd split vs in-game burst_15:      r +0.676  95% CI [+0.523, +0.800]  p 0.0000  n 62
+   leave-one-out R2 for in-game burst_15: tracked burst -0.030, 10-yd split +0.414, both +0.397
+
+=== H3 in-game first step vs pressure (play level, main-sample players)
+   OR per +1 SD slower 0.679 [0.590, 0.780]  p 5.419e-08  pressure at 1 SD faster 0.125 vs 1 SD slower 0.063  t_react coef -1.55 (p 1.27e-17)  plays 20,856 players 62
+
+=== H4 Combine burst_15 -> pressure rate, beyond draft slot and 10-yd split (player level)
+   coef -0.0778 per second; bootstrap 95% CI [-0.1924, +0.0591]; p (HC3) 0.3329; standardized beta -0.137; n 62; model R2 0.503
+   = -0.32 percentage points of pressure rate per +1 SD slower Combine burst
+   other terms: {'const': (0.2897, 0.0), 'forty_burst15_mean': (-0.0778, 0.3329), 'log_pick': (-0.0101, 0.0078), 'ten_yd_split': (-0.0706, 0.0438), 'edge_share': (0.0137, 0.0589)}
+   unadjusted: r -0.214  95% CI [-0.446, +0.048]  p 0.0946  n 62
+
+=== Holm-adjusted p-values (primary tests): {'H3': 0.0, 'H1': 0.2069, 'H4': 0.3329}
+
+=== robustness
+   min 30 rushes  H1 r +0.177  95% CI [-0.032, +0.411]  p 0.1487  n 68
+   min 30 rushes  H4 coef -0.0950 p 0.2128 n 68
+   min 100 rushes  H1 r +0.175  95% CI [-0.053, +0.449]  p 0.2237  n 50
+   min 100 rushes  H4 coef -0.1059 p 0.2760 n 50
+   burst_25: H1 r +0.245  95% CI [+0.022, +0.480]  p 0.0547  n 62
+   burst_25: H3 OR per +1 SD slower 0.610 [0.548, 0.678]  p 5.99e-20  pressure at 1 SD faster 0.134 vs 1 SD slower 0.055  t_react coef -1.47 (p 1.04e-15)  plays 20,813 players 62
+   burst_25: H4 coef -0.0647 p 0.2963
+   acc_1to3: H1 r +0.269  95% CI [+0.007, +0.532]  p 0.0346  n 62
+   acc_1to3: H3 OR per +1 SD slower 0.729 [0.675, 0.788]  p 1.101e-15  pressure at 1 SD faster 0.127 vs 1 SD slower 0.072  t_react coef -1.61 (p 1.15e-15)  plays 19,281 players 62
+   acc_1to3: H4 coef -0.0541 p 0.2432
+   Spearman H1 r +0.259  95% CI [+0.023, +0.470]  p 0.0424  n 62
+   Spearman H4 (unadjusted) r -0.255  95% CI [-0.481, -0.007]  p 0.0456  n 62
+   class 2023: H1 r +0.357  95% CI [-0.093, +0.661]  p 0.0800  n 25 | H4 unadjusted r -0.140  95% CI [-0.524, +0.272]  p 0.5032  n 25
+   class 2024: H1 r +0.118  95% CI [-0.201, +0.550]  p 0.5904  n 23 | H4 unadjusted r -0.182  95% CI [-0.591, +0.384]  p 0.4051  n 23
+   class 2025: H1 r +0.099  95% CI [-0.410, +0.721]  p 0.7364  n 14 | H4 unadjusted r +0.263  95% CI [-0.406, +0.704]  p 0.3637  n 14
+   mostly_EDGE: H1 r +0.095  95% CI [-0.252, +0.394]  p 0.6304  n 28 | H4 unadjusted r +0.105  95% CI [-0.169, +0.443]  p 0.5951  n 28
+   mostly_INTERIOR: H1 r +0.100  95% CI [-0.243, +0.507]  p 0.5742  n 34 | H4 unadjusted r -0.492  95% CI [-0.709, -0.163]  p 0.0031  n 34
+   H3 only EDGE: OR per +1 SD slower 0.673 [0.559, 0.811]  p 3.068e-05  pressure at 1 SD faster 0.151 vs 1 SD slower 0.075  t_react coef -2.02 (p 1.73e-21)  plays 10,662 players 55
+   H3 only INTERIOR_LINE: OR per +1 SD slower 0.681 [0.562, 0.826]  p 9.544e-05  pressure at 1 SD faster 0.099 vs 1 SD slower 0.049  t_react coef -0.92 (p 1.23e-06)  plays 10,194 players 59
+   H3 without unblocked: OR per +1 SD slower 0.676 [0.576, 0.793]  p 1.506e-06  pressure at 1 SD faster 0.116 vs 1 SD slower 0.057  t_react coef -1.73 (p 1.15e-18)  plays 20,697 players 62
+   H4 without unblocked: coef -0.0757 p 0.3065 n 62
+   H3 + dropback_duration: not possible, the column is empty for every DL row
+   H3 all DL players: OR per +1 SD slower 0.648 [0.573, 0.733]  p 4.999e-12  pressure at 1 SD faster 0.127 vs 1 SD slower 0.058  t_react coef -1.45 (p 6.03e-20)  plays 27,375 players 98
+
+=== descriptive: quartiles of Combine burst_15 (main sample)
+shape: (4, 7)
+┌────────────┬─────────┬─────────────────┬──────────────┬────────────────┬────────────────┬────────┐
+│ q          ┆ players ┆ combine_burst15 ┆ game_burst15 ┆ eb_pressure_ra ┆ mean_pick_draf ┆ weight │
+│ ---        ┆ ---     ┆ ---             ┆ ---          ┆ te             ┆ ted            ┆ ---    │
+│ cat        ┆ u32     ┆ f64             ┆ f64          ┆ ---            ┆ ---            ┆ f64    │
+│            ┆         ┆                 ┆              ┆ f64            ┆ f64            ┆        │
+╞════════════╪═════════╪═════════════════╪══════════════╪════════════════╪════════════════╪════════╡
+│ Q1 fastest ┆ 16      ┆ 0.574           ┆ 0.708        ┆ 0.0862         ┆ 114.2          ┆ 273.6  │
+│ Q2         ┆ 15      ┆ 0.598           ┆ 0.727        ┆ 0.0856         ┆ 96.8           ┆ 270.5  │
+│ Q3         ┆ 15      ┆ 0.618           ┆ 0.736        ┆ 0.0816         ┆ 114.8          ┆ 291.3  │
+│ Q4 slowest ┆ 16      ┆ 0.67            ┆ 0.761        ┆ 0.0735         ┆ 109.8          ┆ 299.0  │
+└────────────┴─────────┴─────────────────┴──────────────┴────────────────┴────────────────┴────────┘
+
+saved tests_results_as_written.json and check_h1_h4_as_written.png

@@ -1,0 +1,5 @@
+players 62; outcome: pressure rate shrunk for sample size
+  leave-one-out R2  draft slot                                              +0.141
+  leave-one-out R2  draft slot + 10-yd split + role                         +0.441
+  leave-one-out R2  draft slot + 10-yd split + role + Combine first step    +0.417
+  leave-one-out R2  Combine first step alone                                -0.038

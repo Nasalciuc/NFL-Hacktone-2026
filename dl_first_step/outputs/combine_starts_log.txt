@@ -1,0 +1,80 @@
+40-yard first frame, x and y quantiles by year (is the start line fixed?)
+shape: (3, 7)
+┌────────────┬───────┬───────┬───────┬───────┬───────┬───────┐
+│ draft_year ┆ x_5   ┆ x_50  ┆ x_95  ┆ y_5   ┆ y_50  ┆ y_95  │
+│ ---        ┆ ---   ┆ ---   ┆ ---   ┆ ---   ┆ ---   ┆ ---   │
+│ i64        ┆ f64   ┆ f64   ┆ f64   ┆ f64   ┆ f64   ┆ f64   │
+╞════════════╪═══════╪═══════╪═══════╪═══════╪═══════╪═══════╡
+│ 2023       ┆ 10.33 ┆ 10.77 ┆ 11.17 ┆ -0.97 ┆ -0.63 ┆ -0.4  │
+│ 2024       ┆ 9.7   ┆ 10.97 ┆ 11.77 ┆ -1.33 ┆ -0.5  ┆ 0.67  │
+│ 2025       ┆ 9.76  ┆ 10.33 ┆ 10.99 ┆ -1.22 ┆ -0.67 ┆ -0.41 │
+└────────────┴───────┴───────┴───────┴───────┴───────┴───────┘
+40-yard reps 793, players 418, start speed median 0.63 yd/s
+  tracked t10_best vs official ten_yd_split: players 418, r 0.469, tracked minus official +0.332s (sd 0.133)
+  tracked t40_best vs official forty: players 381, r 0.912, tracked minus official +0.319s (sd 0.133)
+attempt-to-attempt stability, 40-yard dash (players with 2+ attempts)
+  burst_0p5_2p5  all players 375  r  0.06
+  burst_0p5_2p5  DL  players  84  r  0.64
+  t_10           all players 375  r  0.23
+  t_10           DL  players  84  r  0.63
+  disp_1s        all players 375  r  0.34
+  disp_1s        DL  players  84  r  0.48
+  t_40           all players 252  r  0.86
+  t_40           DL  players  49  r  0.92
+  burst_15       all players 325  r  0.35
+  burst_15       DL  players  73  r  0.60
+  burst_25       all players 325  r  0.09
+  burst_25       DL  players  73  r  0.63
+  acc_1to3       all players 325  r  0.10
+  acc_1to3       DL  players  73  r  0.66
+
+DL drills: reps with a clean start (speed under 1 yd/s at the first frame)
+shape: (7, 5)
+┌─────────────────────────────────┬──────┬─────────────┬──────────────┬───────────────┐
+│ drill_name                      ┆ reps ┆ clean_share ┆ burst_median ┆ players_clean │
+│ ---                             ┆ ---  ┆ ---         ┆ ---          ┆ ---           │
+│ str                             ┆ u32  ┆ f64         ┆ f64          ┆ u32           │
+╞═════════════════════════════════╪══════╪═════════════╪══════════════╪═══════════════╡
+│ PASS_RUSH_DRILL                 ┆ 225  ┆ 0.97        ┆ 0.638        ┆ 117           │
+│ FRONT_START_WAVE_DRILL_AND_LAT… ┆ 112  ┆ 1.0         ┆ 0.749        ┆ 112           │
+│ RUN_AND_CLUB_DRILL              ┆ 113  ┆ 0.97        ┆ 0.626        ┆ 109           │
+│ RUN_THE_HOOP_DRILL              ┆ 119  ┆ 1.0         ┆ 0.698        ┆ 109           │
+│ FOUR_BAG_AGILITY_DRILL          ┆ 112  ┆ 0.96        ┆ 5.613        ┆ 108           │
+│ FORTY_YARD_DASH                 ┆ 177  ┆ 0.94        ┆ 0.555        ┆ 93            │
+│ BODY_CONTROL_DRILL              ┆ 113  ┆ 0.77        ┆ 0.717        ┆ 86            │
+└─────────────────────────────────┴──────┴─────────────┴──────────────┴───────────────┘
+pass-rush drill burst_0p5_2p5  rep-to-rep stability: players 101, r 0.27
+pass-rush drill burst_15       rep-to-rep stability: players 101, r 0.14
+pass-rush drill burst_25       rep-to-rep stability: players 101, r 0.18
+pass-rush drill acc_1to3       rep-to-rep stability: players 101, r 0.17
+
+DL players 118; available per measure: {'forty_burst25_mean': 93, 'forty_acc_mean': 93, 'forty_t40_best': 81, 'ten_yd_split': 94, 'forty': 94, 'pass_rush_burst25': 117, 'front_start_burst25': 112, 'run_club_burst25': 109, 'hoop_burst25': 109, 'combine_weight': 118}
+correlations between DL Combine measures (pairwise complete)
+shape: (10, 11)
+┌───────────┬───────────┬───────────┬───────────┬───┬───────────┬───────────┬───────────┬──────────┐
+│ measure   ┆ forty_bur ┆ forty_acc ┆ forty_t40 ┆ … ┆ front_sta ┆ run_club_ ┆ hoop_burs ┆ combine_ │
+│ ---       ┆ st2       ┆ _me       ┆ _be       ┆   ┆ rt_       ┆ bur       ┆ t25       ┆ weig     │
+│ str       ┆ ---       ┆ ---       ┆ ---       ┆   ┆ ---       ┆ ---       ┆ ---       ┆ ---      │
+│           ┆ f64       ┆ f64       ┆ f64       ┆   ┆ f64       ┆ f64       ┆ f64       ┆ f64      │
+╞═══════════╪═══════════╪═══════════╪═══════════╪═══╪═══════════╪═══════════╪═══════════╪══════════╡
+│ forty_bur ┆ 1.0       ┆ 0.99      ┆ 0.54      ┆ … ┆ -0.01     ┆ 0.22      ┆ 0.06      ┆ 0.26     │
+│ st25_mean ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ forty_acc ┆ 0.99      ┆ 1.0       ┆ 0.5       ┆ … ┆ -0.0      ┆ 0.23      ┆ 0.05      ┆ 0.21     │
+│ _mean     ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ forty_t40 ┆ 0.54      ┆ 0.5       ┆ 1.0       ┆ … ┆ 0.01      ┆ 0.28      ┆ 0.33      ┆ 0.83     │
+│ _best     ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ ten_yd_sp ┆ 0.25      ┆ 0.2       ┆ 0.85      ┆ … ┆ -0.0      ┆ 0.23      ┆ 0.36      ┆ 0.86     │
+│ lit       ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ forty     ┆ 0.27      ┆ 0.22      ┆ 0.92      ┆ … ┆ 0.01      ┆ 0.27      ┆ 0.33      ┆ 0.87     │
+│ pass_rush ┆ 0.35      ┆ 0.36      ┆ 0.21      ┆ … ┆ -0.04     ┆ 0.25      ┆ 0.02      ┆ 0.13     │
+│ _burst25  ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ front_sta ┆ -0.01     ┆ -0.0      ┆ 0.01      ┆ … ┆ 1.0       ┆ 0.01      ┆ 0.12      ┆ -0.1     │
+│ rt_burst2 ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ 5         ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ run_club_ ┆ 0.22      ┆ 0.23      ┆ 0.28      ┆ … ┆ 0.01      ┆ 1.0       ┆ 0.07      ┆ 0.18     │
+│ burst25   ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ hoop_burs ┆ 0.06      ┆ 0.05      ┆ 0.33      ┆ … ┆ 0.12      ┆ 0.07      ┆ 1.0       ┆ 0.38     │
+│ t25       ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+│ combine_w ┆ 0.26      ┆ 0.21      ┆ 0.83      ┆ … ┆ -0.1      ┆ 0.18      ┆ 0.38      ┆ 1.0      │
+│ eight     ┆           ┆           ┆           ┆   ┆           ┆           ┆           ┆          │
+└───────────┴───────────┴───────────┴───────────┴───┴───────────┴───────────┴───────────┴──────────┘

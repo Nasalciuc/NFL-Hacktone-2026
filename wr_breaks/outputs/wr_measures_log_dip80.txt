@@ -1,0 +1,52 @@
+break threshold: speed below 80% of the highest speed so far
+=== Combine: share of reps with a break, and median measures, by drill
+shape: (9, 9)
+┌─────────────────────────┬──────┬─────────┬───────────┬───┬──────┬───────┬──────┬─────────┐
+│ drill_name              ┆ reps ┆ players ┆ has_break ┆ … ┆ low  ┆ decel ┆ drop ┆ reaccel │
+│ ---                     ┆ ---  ┆ ---     ┆ ---       ┆   ┆ ---  ┆ ---   ┆ ---  ┆ ---     │
+│ str                     ┆ u32  ┆ u32     ┆ f64       ┆   ┆ f64  ┆ f64   ┆ f64  ┆ f64     │
+╞═════════════════════════╪══════╪═════════╪═══════════╪═══╪══════╪═══════╪══════╪═════════╡
+│ COMEBACK_ROUTE_RIGHT    ┆ 110  ┆ 98      ┆ 1.0       ┆ … ┆ 2.65 ┆ 4.04  ┆ 0.67 ┆ 3.22    │
+│ CURL_ROUTE_RIGHT        ┆ 110  ┆ 103     ┆ 0.95      ┆ … ┆ 1.88 ┆ 4.38  ┆ 0.73 ┆ 2.79    │
+│ SLOT_STRIKE_ROUTE_LEFT  ┆ 102  ┆ 101     ┆ 0.85      ┆ … ┆ 0.89 ┆ 4.49  ┆ 0.82 ┆ 5.81    │
+│ SPEED_OUT_ROUTE_LEFT    ┆ 124  ┆ 107     ┆ 0.69      ┆ … ┆ 4.4  ┆ 1.27  ┆ 0.36 ┆ 1.88    │
+│ POST_CORNER_ROUTE_LEFT  ┆ 80   ┆ 70      ┆ 0.69      ┆ … ┆ 5.66 ┆ 1.13  ┆ 0.29 ┆ 1.24    │
+│ DAGGER_ROUTE_LEFT       ┆ 115  ┆ 107     ┆ 0.6       ┆ … ┆ 6.12 ┆ 1.48  ┆ 0.25 ┆ 1.03    │
+│ SLOT_SAIL_ROUTE_RIGHT   ┆ 106  ┆ 98      ┆ 0.53      ┆ … ┆ 5.88 ┆ 1.5   ┆ 0.27 ┆ 1.37    │
+│ POST_CORNER_ROUTE_RIGHT ┆ 111  ┆ 96      ┆ 0.45      ┆ … ┆ 6.39 ┆ 1.32  ┆ 0.31 ┆ 0.63    │
+│ SLANT_ROUTE_LEFT        ┆ 110  ┆ 107     ┆ 0.04      ┆ … ┆ 5.44 ┆ 1.43  ┆ 0.29 ┆ 1.25    │
+└─────────────────────────┴──────┴─────────┴───────────┴───┴──────┴───────┴──────┴─────────┘
+
+=== games: routes with snap and pass 30,956
+shape: (12, 10)
+┌───────────┬────────┬───────────┬─────────┬───┬───────┬──────┬─────────┬──────┐
+│ route_ran ┆ routes ┆ has_break ┆ t_entry ┆ … ┆ decel ┆ drop ┆ reaccel ┆ sep  │
+│ ---       ┆ ---    ┆ ---       ┆ ---     ┆   ┆ ---   ┆ ---  ┆ ---     ┆ ---  │
+│ str       ┆ u32    ┆ f64       ┆ f64     ┆   ┆ f64   ┆ f64  ┆ f64     ┆ f64  │
+╞═══════════╪════════╪═══════════╪═════════╪═══╪═══════╪══════╪═════════╪══════╡
+│ GO        ┆ 6076   ┆ 0.1       ┆ 2.6     ┆ … ┆ 2.09  ┆ 0.4  ┆ 0.97    ┆ 2.0  │
+│ HITCH     ┆ 5012   ┆ 0.61      ┆ 1.8     ┆ … ┆ 3.47  ┆ 0.57 ┆ 2.17    ┆ 2.73 │
+│ CROSS     ┆ 3787   ┆ 0.17      ┆ 2.4     ┆ … ┆ 1.97  ┆ 0.42 ┆ 1.14    ┆ 2.81 │
+│ IN        ┆ 3427   ┆ 0.35      ┆ 1.9     ┆ … ┆ 2.2   ┆ 0.34 ┆ 1.68    ┆ 2.63 │
+│ POST      ┆ 3123   ┆ 0.08      ┆ 2.5     ┆ … ┆ 1.83  ┆ 0.34 ┆ 0.93    ┆ 2.63 │
+│ …         ┆ …      ┆ …         ┆ …       ┆ … ┆ …     ┆ …    ┆ …       ┆ …    │
+│ SLANT     ┆ 2105   ┆ 0.08      ┆ 1.9     ┆ … ┆ 2.17  ┆ 0.36 ┆ 2.08    ┆ 2.2  │
+│ SCREEN    ┆ 942    ┆ 0.19      ┆ 0.1     ┆ … ┆ 1.6   ┆ 0.46 ┆ -1.33   ┆ 6.54 │
+│ FLAT      ┆ 892    ┆ 0.23      ┆ 1.65    ┆ … ┆ 1.88  ┆ 0.43 ┆ 1.42    ┆ 4.32 │
+│ WHEEL     ┆ 48     ┆ 0.12      ┆ 3.55    ┆ … ┆ 2.19  ┆ 0.41 ┆ 0.82    ┆ 3.0  │
+│ ANGLE     ┆ 18     ┆ 0.56      ┆ 1.65    ┆ … ┆ 3.31  ┆ 0.67 ┆ 5.24    ┆ 4.48 │
+└───────────┴────────┴───────────┴─────────┴───┴───────┴──────┴─────────┴──────┘
+
+drills with a break in >= 80% of reps: ['COMEBACK_ROUTE_RIGHT', 'CURL_ROUTE_RIGHT', 'SLOT_STRIKE_ROUTE_LEFT']
+route types with a break in >= 50% of routes: ['HITCH']
+Combine stability across drills (odd vs even drills, z within drill):
+  decel_z    players  98  r  0.15  reliability  0.26
+  drop_z     players  98  r  0.21  reliability  0.35
+  reaccel_z  players  98  r  0.18  reliability  0.30
+Game stability across odd vs even games (z within route type, >= 25 breaks per half):
+  decel_z    players  22  r  0.60  reliability  0.75
+  drop_z     players  22  r -0.05  reliability -0.11
+  reaccel_z  players   0  r   nan  reliability   nan
+  separation (all routes)  players  67  r  0.67  reliability  0.80
+
+WR with Combine break measures: 106; breaks per player median 3.0

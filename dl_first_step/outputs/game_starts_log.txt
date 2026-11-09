@@ -1,0 +1,48 @@
+pass rushes 28,970; with tracking and snap 28,961; stance starts 27,689
+depth from line of scrimmage at snap (yd), 1/10/50/90/99%: [-0.27, 0.14, 0.59, 1.04, 1.59]; behind the line at snap: 0.0519
+crossed the line within the track: 0.898
+
+which tracking measure matches the official get-off column (stance starts)?
+  t_cross_los     plays 22,932  r 0.705  mean diff -0.419s  median abs diff 0.388s
+  t_2p5           plays 24,152  r 0.637  mean diff +0.278s  median abs diff 0.262s
+  t_move          plays 24,172  r 0.553  mean diff -0.650s  median abs diff 0.603s
+  burst_0p5_2p5   plays 24,152  r 0.508  mean diff -0.203s  median abs diff 0.214s
+  player averages (>=30 rushes): players 85, r 0.750
+
+stability across odd vs even games (stance starts, >=25 rushes per half)
+  t_move          players  74  split-half r  0.82  reliability  0.90  filled 1.000
+  burst_0p5_2p5   players  74  split-half r  0.86  reliability  0.92  filled 0.998
+  t_2p5           players  74  split-half r  0.85  reliability  0.92  filled 0.998
+  t_cross_los     players  71  split-half r  0.81  reliability  0.90  filled 0.902
+  player_get_off  players  72  split-half r  0.93  reliability  0.96  filled 0.873
+  disp_1s         players  74  split-half r  0.90  reliability  0.95  filled 1.000
+  upfield_1s      players  74  split-half r  0.87  reliability  0.93  filled 1.000
+  s_1s            players  74  split-half r  0.95  reliability  0.97  filled 1.000
+  t_react         players  74  split-half r  0.69  reliability  0.82  filled 1.000
+  burst_15        players  74  split-half r  0.86  reliability  0.92  filled 0.999
+  burst_25        players  74  split-half r  0.88  reliability  0.94  filled 0.997
+  acc_1to3        players  74  split-half r  0.95  reliability  0.97  filled 0.932
+
+how the anchored pieces relate to the official get-off (play level, stance starts)
+  t_react    plays 24,172  r 0.622  median 0.279s
+  burst_15   plays 24,170  r 0.536  median 0.655s
+  burst_25   plays 24,142  r 0.489  median 0.958s
+  acc_1to3   plays 22,593  r 0.364  median 0.584s
+  t_react + burst_25 vs official get-off: plays 24,142, r 0.643
+
+medians by alignment (stance starts)
+shape: (6, 9)
+┌──────────────┬────────┬─────────┬────────┬───┬─────────────┬─────────────┬─────────┬─────────────┐
+│ lined_up_pos ┆ rushes ┆ players ┆ t_move ┆ … ┆ t_cross_los ┆ player_get_ ┆ disp_1s ┆ pressure_ra │
+│ ition        ┆ ---    ┆ ---     ┆ ---    ┆   ┆ ---         ┆ off         ┆ ---     ┆ te          │
+│ ---          ┆ u32    ┆ u32     ┆ f64    ┆   ┆ f64         ┆ ---         ┆ f64     ┆ ---         │
+│ str          ┆        ┆         ┆        ┆   ┆             ┆ f64         ┆         ┆ f64         │
+╞══════════════╪════════╪═════════╪════════╪═══╪═════════════╪═════════════╪═════════╪═════════════╡
+│ EDGE         ┆ 15296  ┆ 85      ┆ 0.318  ┆ … ┆ 0.527       ┆ 0.859       ┆ 2.045   ┆ 0.107       │
+│ INTERIOR_LIN ┆ 12093  ┆ 89      ┆ 0.318  ┆ … ┆ 0.61        ┆ 1.005       ┆ 1.717   ┆ 0.073       │
+│ E            ┆        ┆         ┆        ┆   ┆             ┆             ┆         ┆             │
+│ SLOT_CB      ┆ 234    ┆ 26      ┆ 0.602  ┆ … ┆ 0.859       ┆ 0.989       ┆ 0.795   ┆ 0.021       │
+│ MLB          ┆ 42     ┆ 18      ┆ 0.343  ┆ … ┆ 1.243       ┆ null        ┆ 1.638   ┆ 0.119       │
+│ OLB          ┆ 15     ┆ 10      ┆ 0.527  ┆ … ┆ 1.541       ┆ null        ┆ 1.1     ┆ 0.0         │
+│ CB           ┆ 9      ┆ 8       ┆ 0.492  ┆ … ┆ 1.115       ┆ null        ┆ 0.644   ┆ 0.0         │
+└──────────────┴────────┴─────────┴────────┴───┴─────────────┴─────────────┴─────────┴─────────────┘
